@@ -1,0 +1,1184 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { useDispatch, useSelector } from 'react-redux';
+import L from 'leaflet';
+import LayersOutlined from "@mui/icons-material/LayersOutlined";
+import {
+  SearchOutlined,
+  CloseOutlined,
+} from '@mui/icons-material';
+import { TbWavesElectricity } from 'react-icons/tb';
+import { IoWaterOutline, IoHomeOutline } from 'react-icons/io5';
+import { MdOutlineHistory, MdOutlineRoute } from 'react-icons/md';
+import { FaEarthAmericas } from 'react-icons/fa6';
+import Navbar from '../components/Navbar';
+import { editShelter, requestDeleteShelter } from '../features/shelters/sheltersSlice';
+
+// Fix Leaflet default marker icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+const center = {
+  lat: 32.65,
+  lng: 74.46,
+};
+
+// River gauge markers - Chenab and Jhelum only
+const riverGauges = [
+  { id: 'chenab_station', position: { lat: 32.65, lng: 74.46 }, level: 'noData', name: 'Chenab River Station' },
+  { id: 'jhelum_station', position: { lat: 33.73, lng: 73.73 }, level: 'noData', name: 'Jhelum River Station' },
+];
+
+const Maps = () => {
+  const mapRef = useRef(null);
+  const dispatch = useDispatch();
+  const shelters = useSelector((state) => state.shelters.shelters);
+  const accountType = useSelector((state) => state.auth.accountType);
+  const currentUser = useSelector((state) => state.auth.user);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showViewOptions, setShowViewOptions] = useState(false);
+  const [mapType, setMapType] = useState('map'); // 'map' or 'satellite'
+  const [selectedGauge, setSelectedGauge] = useState(null);
+  const [showBasinSize, setShowBasinSize] = useState(false);
+  const [selectedShelter, setSelectedShelter] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', phone: '' });
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
+
+  // Layer toggles
+  const [layers, setLayers] = useState({
+    riverGauges: true,
+    inundationProbability: false,
+    inundationHistory: false,
+    evacuationRoutes: false,
+    shelters: true, // Set to true by default so shelters are visible
+  });
+
+  const fetchSearchSuggestions = async (query) => {
+    if (!query || query.length < 2) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.openrouteservice.org/geocode/autocomplete?api_key=${import.meta.env.VITE_OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}`
+      );
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        setSearchSuggestions(data.features.slice(0, 5));
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Autocomplete error:', error);
+    }
+  };
+
+  const handleSearch = async (selectedFeature = null) => {
+    if (!mapRef.current) return;
+
+    try {
+      if (selectedFeature) {
+        const [lng, lat] = selectedFeature.geometry.coordinates;
+        mapRef.current.flyTo([lat, lng], 12);
+        setSearchQuery(selectedFeature.properties.label || selectedFeature.properties.name);
+        setShowSuggestions(false);
+      } else if (searchQuery) {
+        const response = await fetch(
+          `https://api.openrouteservice.org/geocode/search?api_key=${import.meta.env.VITE_OPENROUTE_API_KEY}&text=${encodeURIComponent(searchQuery)}`
+        );
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          const [lng, lat] = data.features[0].geometry.coordinates;
+          mapRef.current.flyTo([lat, lng], 12);
+          setShowSuggestions(false);
+        }
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const toggleLayer = (layerName) => {
+    setLayers(prev => ({
+      ...prev,
+      [layerName]: !prev[layerName],
+    }));
+  };
+
+  const getMarkerColor = (level) => {
+    const colors = {
+      extreme: '#952426',
+      danger: '#FF1519',
+      warning: '#FB9B2D',
+      normal: '#43A468',
+      noData: '#9CA3AF',
+    };
+    return colors[level] || colors.noData;
+  };
+
+  const handleMarkerClick = (gauge) => {
+    setSelectedGauge(gauge);
+  };
+
+  return (
+    <div className="relative w-full h-screen overflow-hidden bg-white">
+      <Navbar />
+
+      {/* Main content - full screen */}
+      <div className="absolute top-0 h-full transition-all duration-300" style={{ left: '0', width: '100%' }}>
+        {/* Search Bar */}
+<div
+  className="absolute z-10"
+  style={{
+    top: '26px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '600px',
+  }}
+>
+  <div
+    className="flex items-center shadow-lg"
+    style={{
+      height: '45px',
+      paddingLeft: '16px',
+      paddingRight: '16px',
+      backgroundColor: '#FFFFFF',
+      border: '1px solid #5f6063ab',
+      borderRadius: showSuggestions && searchSuggestions.length > 0 ? '20px 20px 0 0' : '30px',
+      transition: 'border-radius 0.2s ease',
+    }}
+  >
+    <SearchOutlined
+      style={{
+        color: '#9CA3AF',
+        fontSize: '22px',
+        marginRight: '12px',
+      }}
+    />
+
+    <input
+      type="text"
+      placeholder="Search for location"
+      value={searchQuery}
+      onChange={(e) => {
+        setSearchQuery(e.target.value);
+        if (!e.target.value || e.target.value.trim() === '') {
+          setShowSuggestions(false);
+          setSearchSuggestions([]);
+        } else {
+          fetchSearchSuggestions(e.target.value);
+        }
+      }}
+      onKeyPress={handleKeyPress}
+      onFocus={() => searchSuggestions.length > 0 && searchQuery && setShowSuggestions(true)}
+      className="flex-1 outline-none border-none"
+      style={{
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '16px',
+        color: '#1F2937',
+      }}
+    />
+  </div>
+
+  {/* Search Suggestions Dropdown */}
+  {showSuggestions && searchSuggestions.length > 0 && (
+    <div
+      style={{
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E5E7EB',
+        borderTop: 'none',
+        borderRadius: '0 0 20px 20px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+        maxHeight: '300px',
+        overflowY: 'auto',
+      }}
+    >
+      {searchSuggestions.map((suggestion, index) => (
+        <div
+          key={index}
+          onClick={() => handleSearch(suggestion)}
+          style={{
+            padding: '12px 16px',
+            cursor: 'pointer',
+            borderBottom: index < searchSuggestions.length - 1 ? '1px solid #e6e7e9ff' : 'none',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '14px',
+            color: '#1F2937',
+            transition: 'background-color 0.2s',
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#F9FAFB'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+        >
+          {suggestion.properties.label || suggestion.properties.name}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+
+        {/* Layer Toggle Button - only show when View Options is closed */}
+        {!showViewOptions && (
+          <button
+            onClick={() => setShowViewOptions(!showViewOptions)}
+            className="absolute z-10 bg-white rounded-full transition-all duration-200 hover:bg-gray-50"
+            style={{
+              top: '30px',
+              right: '30px',
+              width: '54px',
+              height: '54px',
+              backgroundColor: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 20px rgba(0, 0, 0, 0.31)',
+              border: 'none',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <LayersOutlined
+              style={{
+                color: '#000000ff',
+                fontSize: '28px',
+              }}
+            />
+          </button>
+        )}
+
+        {/* View Options Panel */}
+        {showViewOptions && (
+          <div
+            className="absolute z-20 bg-white"
+            style={{
+              top: '30px',
+              backgroundColor: '#FFFFFF',
+              right: '30px',
+              width: '400px',
+              padding: '0',
+              borderRadius: '20px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between" style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB' }}>
+              <div className="flex items-center gap-2">
+                <LayersOutlined style={{ color: '#000000', fontSize: '24px' }} />
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 600, color: '#000000', paddingLeft: "10px"  }}>
+                  View options
+                </span>
+              </div>
+              <button
+                onClick={() => setShowViewOptions(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                <CloseOutlined style={{ color: '#000000', fontSize: '24px' }} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: '13px 24px' }}>
+              {/* Map Type Toggle */}
+              <div className="mb-6 flex justify-center">
+                <div
+                  style={{
+                    width: '165px',
+                    height: '50px',
+                    border: '1px solid #000000',
+                    borderRadius: '30px',
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setMapType(mapType === 'map' ? 'satellite' : 'map')}
+                >
+                  {/* Sliding Earth Icon with black circle background */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: mapType === 'map' ? '4px' : 'calc(95% - 36px)',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      transition: 'left 0.3s ease',
+                      zIndex: 2,
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#000000',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <FaEarthAmericas
+                      style={{
+                        fontSize: '18px',
+                        color: '#FFFFFF',
+                        transform: 'scale(2)',   // ⬅ makes icon bigger without thickening
+                      }}
+                    />
+                  </div>
+
+
+                  {/* Text - shows opposite side */}
+                  <div
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: mapType === 'map' ? 'flex-end' : 'flex-start',
+                      paddingLeft: mapType === 'map' ? '0' : '15px',
+                      paddingRight: mapType === 'map' ? '15px' : '0',
+                      fontFamily: 'Inter, sans-serif',
+                      fontSize: '20px',
+                      fontWeight: 500,
+                      color: '#000000',
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    <span>{mapType === 'map' ? 'Map' : 'Satellite'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Separator Line */}
+              <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '15px 0' }} />
+
+              {/* Layer Toggles */}
+              <div className="flex flex-col">
+                {/* River Gauges */}
+                <div style={{ paddingBottom: '2px' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TbWavesElectricity style={{ fontSize: '24px', color: '#000000' }} />
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, color: '#000000' , paddingLeft: "10px" }}>
+                        River Guages
+                      </span>
+                    </div>
+                    <label className="relative inline-block" style={{ width: '48px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={layers.riverGauges}
+                        onChange={() => toggleLayer('riverGauges')}
+                        className="opacity-0 w-0 h-0"
+                      />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          cursor: 'pointer',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: layers.riverGauges ? '#3a88d6ff' : '#D1D5DB',
+                          borderRadius: '24px',
+                          transition: 'background-color 0.2s',
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '20px',
+                            width: '20px',
+                            left: layers.riverGauges ? '26px' : '2px',
+                            bottom: '2px',
+                            backgroundColor: 'white',
+                            borderRadius: '50%',
+                            transition: 'left 0.2s',
+                          }}
+                        />
+                      </span>
+                    </label>
+                  </div>
+                  {layers.riverGauges && (
+                    <div style={{ marginTop: '12px', marginLeft: '36px' }}>
+                      <div className="flex flex-col" style={{ gap: '8px' }}>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#952426' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#000000ff', paddingLeft: "10px"  }}>Extreme Level</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#FF1519' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Danger Level</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#FB9B2D' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#000000ff', paddingLeft: "10px" }}>Warning Level</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#9CA3AF' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>No Data</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#43A468' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px"}}>Normal Level</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Separator Line */}
+                <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
+
+                {/* Inundation Probability */}
+                <div style={{ paddingBottom: '2px' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <IoWaterOutline style={{ fontSize: '24px', color: '#000000' }} />
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, color: '#000000', paddingLeft: "10px"  }}>
+                        Inundation Probability
+                      </span>
+                    </div>
+                    <label className="relative inline-block" style={{ width: '48px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={layers.inundationProbability}
+                        onChange={() => toggleLayer('inundationProbability')}
+                        className="opacity-0 w-0 h-0"
+                      />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          cursor: 'pointer',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: layers.inundationProbability ? '#3a88d6ff' : '#D1D5DB',
+                          borderRadius: '24px',
+                          transition: 'background-color 0.2s',
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '20px',
+                            width: '20px',
+                            left: layers.inundationProbability ? '26px' : '2px',
+                            bottom: '2px',
+                            backgroundColor: 'white',
+                            borderRadius: '50%',
+                            transition: 'left 0.2s',
+                          }}
+                        />
+                      </span>
+                    </label>
+                  </div>
+                  {layers.inundationProbability && (
+                    <div style={{ marginTop: '12px', marginLeft: '36px' }}>
+                      <div className="flex flex-col" style={{ gap: '8px' }}>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#1D4ED8' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Very High</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#60A5FA' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#000000ff', paddingLeft: "10px" }}>High</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#BFDBFE' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#000000ff', paddingLeft: "10px" }}>Moderate</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Separator Line */}
+                <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
+
+                {/* Inundation History */}
+                <div style={{ paddingBottom: '2px' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MdOutlineHistory style={{ fontSize: '24px', color: '#000000' }} />
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, color: '#000000' , paddingLeft: "10px" }}>
+                        Inundation History
+                      </span>
+                    </div>
+                    <label className="relative inline-block" style={{ width: '48px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={layers.inundationHistory}
+                        onChange={() => toggleLayer('inundationHistory')}
+                        className="opacity-0 w-0 h-0"
+                      />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          cursor: 'pointer',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: layers.inundationHistory ? '#3a88d6ff' : '#D1D5DB',
+                          borderRadius: '24px',
+                          transition: 'background-color 0.2s',
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '20px',
+                            width: '20px',
+                            left: layers.inundationHistory ? '26px' : '2px',
+                            bottom: '2px',
+                            backgroundColor: 'white',
+                            borderRadius: '50%',
+                            transition: 'left 0.2s',
+                          }}
+                        />
+                      </span>
+                    </label>
+                  </div>
+                  {layers.inundationHistory && (
+                    <div style={{ marginTop: '12px', marginLeft: '36px' }}>
+                      <div className="flex flex-col" style={{ gap: '8px' }}>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Wet 5%</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#A78BFA' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Wet 1%</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#DDD6FE' }} />
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#000000ff', paddingLeft: "10px" }}>Wet 0.5%</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Separator Line */}
+                <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
+
+                {/* Evacuation Routes */}
+                <div style={{ paddingBottom: '2px' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MdOutlineRoute style={{ fontSize: '24px', color: '#000000' }} />
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, color: '#000000', paddingLeft: "10px"  }}>
+                        Evacuation Routes
+                      </span>
+                    </div>
+                    <label className="relative inline-block" style={{ width: '48px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={layers.evacuationRoutes}
+                        onChange={() => toggleLayer('evacuationRoutes')}
+                        className="opacity-0 w-0 h-0"
+                      />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          cursor: 'pointer',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: layers.evacuationRoutes ? '#3a88d6ff' : '#D1D5DB',
+                          borderRadius: '24px',
+                          transition: 'background-color 0.2s',
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '20px',
+                            width: '20px',
+                            left: layers.evacuationRoutes ? '26px' : '2px',
+                            bottom: '2px',
+                            backgroundColor: 'white',
+                            borderRadius: '50%',
+                            transition: 'left 0.2s',
+                          }}
+                        />
+                      </span>
+                    </label>
+                  </div>
+                  {layers.evacuationRoutes && (
+                    <div style={{ marginTop: '12px', marginLeft: '36px' }}>
+                      <div className="flex items-center gap-3">
+                        <div style={{ width: '12px', height: '12px',  borderRadius: '50%',backgroundColor: '#FDE047' }} />
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Evacuation Path</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* Separator Line */}
+                <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
+
+                {/* Shelter */}
+                <div style={{ paddingBottom: '2px' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <IoHomeOutline style={{ fontSize: '24px', color: '#000000' }} />
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, color: '#000000', paddingLeft: "10px" }}>
+                        Shelter
+                      </span>
+                    </div>
+                    <label className="relative inline-block" style={{ width: '48px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={layers.shelters}
+                        onChange={() => toggleLayer('shelters')}
+                        className="opacity-0 w-0 h-0"
+                      />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          cursor: 'pointer',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: layers.shelters ? '#3a88d6ff' : '#D1D5DB',
+                          borderRadius: '24px',
+                          transition: 'background-color 0.2s',
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '20px',
+                            width: '20px',
+                            left: layers.shelters ? '26px' : '2px',
+                            bottom: '2px',
+                            backgroundColor: 'white',
+                            borderRadius: '50%',
+                            transition: 'left 0.2s',
+                          }}
+                        />
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Leaflet Map */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+          <MapContainer
+            center={[center.lat, center.lng]}
+            zoom={8}
+            style={{ width: '100%', height: '100%' }}
+            ref={mapRef}
+          >
+            <TileLayer
+              url={mapType === 'satellite' 
+                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              }
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            
+            {/* River Gauge Markers */}
+            {layers.riverGauges && riverGauges.map((gauge) => (
+              <Marker
+                key={gauge.id}
+                position={[gauge.position.lat, gauge.position.lng]}
+                icon={L.divIcon({
+                  className: 'custom-gauge-icon',
+                  html: `<svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24c0-8.837-7.163-16-16-16z" fill="${getMarkerColor(gauge.level)}"/><path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24c0-8.837-7.163-16-16-16z" stroke="white" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="white"/></svg>`,
+                  iconSize: [32, 40],
+                  iconAnchor: [16, 40],
+                  popupAnchor: [0, -40],
+                })}
+                eventHandlers={{
+                  click: () => handleMarkerClick(gauge),
+                }}
+              >
+                <Popup>{gauge.name}</Popup>
+              </Marker>
+            ))}
+
+            {/* Shelter Markers */}
+            {layers.shelters && shelters.map((shelter) => (
+              <Marker
+                key={shelter.id}
+                position={[shelter.lat, shelter.lng]}
+                icon={L.divIcon({
+                  className: 'custom-shelter-icon',
+                  html: `<div style="background-color: #222ba8; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>`,
+                  iconSize: [32, 32],
+                  iconAnchor: [16, 32],
+                })}
+                eventHandlers={{ click: () => { setSelectedShelter(shelter); setEditMode(false); } }}
+              />
+            ))}
+          </MapContainer>
+        </div>
+
+        {/* Shelter Info Overlay */}
+        {selectedShelter && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: '#FFFFFF',
+              borderRadius: '20px',
+              padding: '20px 24px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              zIndex: 1001,
+              width: editMode ? '380px' : '300px',
+              transition: 'width 0.2s ease',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#000000', margin: 0 }}>
+                Shelter Info
+              </h3>
+              <button
+                onClick={() => { setSelectedShelter(null); setEditMode(false); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+              >
+                <CloseOutlined style={{ color: '#6B7280', fontSize: '20px' }} />
+              </button>
+            </div>
+
+            {!editMode ? (
+              <>
+                <div style={{ marginBottom: '10px' }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Name</span>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000' }}>{selectedShelter.name}</span>
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Phone</span>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000' }}>{selectedShelter.phone || 'N/A'}</span>
+                </div>
+                {accountType === 'organization' && selectedShelter.email === currentUser && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => { setEditMode(true); setEditForm({ name: selectedShelter.name, phone: selectedShelter.phone || '' }); }}
+                      style={{
+                        flex: 1, height: '36px', backgroundColor: '#b7c9dc', border: 'none',
+                        borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500,
+                        color: '#000000', cursor: 'pointer', transition: 'background-color 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#8f9dad'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#b7c9dc'}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        dispatch(requestDeleteShelter(selectedShelter));
+                        setSelectedShelter(null);
+                        setShowDeleteToast(true);
+                        setTimeout(() => setShowDeleteToast(false), 3000);
+                      }}
+                      style={{
+                        flex: 1, height: '36px', backgroundColor: '#FFFFFF', border: '2px solid #F87171',
+                        borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500,
+                        color: '#EF4444', cursor: 'pointer', transition: 'background-color 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
+                    >
+                      Request Delete
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Name</label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                    style={{
+                      width: '100%', height: '38px', border: '1px solid #D1D5DB', borderRadius: '12px',
+                      padding: '0 12px', fontFamily: 'Inter, sans-serif', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Phone</label>
+                  <input
+                    type="text"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                    style={{
+                      width: '100%', height: '38px', border: '1px solid #D1D5DB', borderRadius: '12px',
+                      padding: '0 12px', fontFamily: 'Inter, sans-serif', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => {
+                      if (editForm.name.trim()) {
+                        dispatch(editShelter({ id: selectedShelter.id, name: editForm.name.trim(), phone: editForm.phone.trim() }));
+                        setEditMode(false);
+                        setSelectedShelter(null);
+                      }
+                    }}
+                    style={{
+                      flex: 1, height: '36px', backgroundColor: '#b7c9dc', border: 'none',
+                      borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500,
+                      color: '#000000', cursor: 'pointer', transition: 'background-color 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#8f9dad'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#b7c9dc'}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditMode(false)}
+                    style={{
+                      flex: 1, height: '36px', backgroundColor: '#FFFFFF', border: '2px solid #D1D5DB',
+                      borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500,
+                      color: '#6B7280', cursor: 'pointer', transition: 'background-color 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Delete Request Toast */}
+        {showDeleteToast && (
+          <div style={{
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#1F618A',
+            color: '#FFFFFF',
+            padding: '12px 24px',
+            borderRadius: '12px',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '14px',
+            fontWeight: 500,
+            zIndex: 2000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}>
+            Delete request submitted for admin review
+          </div>
+        )}
+
+        {/* Bottom Panel for Gauge Details */}
+        {selectedGauge && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '70%',
+              right: 0,
+              height: '290px',
+              borderRadius: '20px',
+              backgroundColor: '#FFFFFF',
+              boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+              padding: '20px 40px',
+              zIndex: 1000,
+              borderTop: '1px solid #E5E7EB',
+            }}
+          >
+            <button
+              onClick={() => setSelectedGauge(null)}
+              style={{ 
+                position: 'absolute',
+                top: '20px',
+                right: '40px',
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              <CloseOutlined style={{ color: '#6B7280', fontSize: '24px' }} />
+            </button>
+
+            <div className="flex h-full" style={{ gap: '40px', maxWidth: '1400px', margin: '0 auto' }}>
+              {/* Left side - Chart */}
+              <div 
+                style={{ 
+                  flex: '0 0 420px',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  backgroundColor: '#FAFAFA',
+                }}
+              >
+                {/* Chart Title and Legend */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', fontFamily: 'Inter, sans-serif' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '30px', borderTop: '2px solid #000000' }}></div>
+                      <span style={{ color: '#6B7280' }}>"Now" (until a vertical dashed line)</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '30px', borderTop: '2px solid #FB9B2D' }}></div>
+                      <span style={{ color: '#6B7280' }}>"Warning Level" (orange line 105.6 level)</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '30px', borderTop: '2px solid #FF1519' }}></div>
+                      <span style={{ color: '#6B7280' }}>"Danger Level" (orange line 105.6 level)</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '30px', borderTop: '2px dashed #000000' }}></div>
+                      <span style={{ color: '#6B7280' }}>"Projected level" (dotted black line)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chart Placeholder */}
+                <div style={{ 
+                  height: 'calc(100% - 100px)',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  backgroundColor: '#FFFFFF',
+                }}>
+                  {/* Y-axis label */}
+                  <div style={{
+                    position: 'absolute',
+                    left: '-5px',
+                    top: '50%',
+                    transform: 'rotate(-90deg) translateY(-50%)',
+                    transformOrigin: 'left center',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '11px',
+                    color: '#6B7280',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    River Level (m)
+                  </div>
+
+                  {/* X-axis label */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '11px',
+                    color: '#6B7280',
+                  }}>
+                    Time (Date)
+                  </div>
+
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#9CA3AF' }}>
+                    Chart visualization
+                  </span>
+                </div>
+              </div>
+
+              {/* Vertical Separator Line */}
+              <div style={{ width: '1px', backgroundColor: '#E5E7EB', alignSelf: 'stretch' }}></div>
+
+              {/* Right side - Gauge Information */}
+              <div style={{ flex: 1, paddingTop: '8px', paddingLeft: '20px' }}>
+                <h3 style={{ 
+                  fontFamily: 'Inter, sans-serif', 
+                  fontSize: '20px', 
+                  fontWeight: 600,
+                  color: '#000000',
+                  marginBottom: '24px',
+                }}>
+                  Gauge Information
+                </h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Two columns layout */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '280px 280px', gap: '60px' }}>
+                    {/* Left column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '13px', 
+                          color: '#6B7280', 
+                          marginBottom: '6px',
+                          fontWeight: 400,
+                        }}>
+                          River Gauge ID
+                        </p>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '15px', 
+                          fontWeight: 500,
+                          color: '#000000',
+                        }}>
+                          hybas_4120703600
+                        </p>
+                      </div>
+
+                      <div>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '13px', 
+                          color: '#6B7280', 
+                          marginBottom: '6px',
+                          fontWeight: 400,
+                        }}>
+                          Source
+                        </p>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '15px', 
+                          fontWeight: 500,
+                          color: '#000000',
+                        }}>
+                          WAPDA
+                        </p>
+                      </div>
+
+                      <div>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '13px', 
+                          color: '#6B7280', 
+                          marginBottom: '6px',
+                          fontWeight: 400,
+                        }}>
+                          Lat/Long
+                        </p>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '15px', 
+                          fontWeight: 500,
+                          color: '#000000',
+                        }}>
+                          34.063056,74.834444
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right column */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '13px', 
+                          color: '#6B7280', 
+                          marginBottom: '6px',
+                          fontWeight: 400,
+                        }}>
+                          Station Name
+                        </p>
+                        <p style={{ 
+                          fontFamily: 'Inter, sans-serif', 
+                          fontSize: '15px', 
+                          fontWeight: 500,
+                          color: '#000000',
+                        }}>
+                          Chenab River Station
+                        </p>
+                      </div>
+
+                      <div>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                        }}>
+                          <div>
+                            <p style={{ 
+                              fontFamily: 'Inter, sans-serif', 
+                              fontSize: '13px', 
+                              color: '#6B7280', 
+                              marginBottom: '6px',
+                              fontWeight: 400,
+                            }}>
+                              Basin size (km²)
+                            </p>
+                            <p style={{ 
+                              fontFamily: 'Inter, sans-serif', 
+                              fontSize: '15px', 
+                              fontWeight: 500,
+                              color: '#000000',
+                            }}>
+                              934.6
+                            </p>
+                          </div>
+                          <label className="relative inline-block" style={{ width: '48px', height: '24px', marginTop: '8px' }}>
+                            <input
+                              type="checkbox"
+                              checked={showBasinSize}
+                              onChange={() => setShowBasinSize(!showBasinSize)}
+                              className="opacity-0 w-0 h-0"
+                            />
+                            <span
+                              style={{
+                                position: 'absolute',
+                                cursor: 'pointer',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: showBasinSize ? '#3a88d6ff' : '#D1D5DB',
+                                borderRadius: '24px',
+                                transition: 'background-color 0.2s',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  position: 'absolute',
+                                  content: '""',
+                                  height: '20px',
+                                  width: '20px',
+                                  left: showBasinSize ? '26px' : '2px',
+                                  bottom: '2px',
+                                  backgroundColor: 'white',
+                                  borderRadius: '50%',
+                                  transition: 'left 0.2s',
+                                }}
+                              />
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Maps;

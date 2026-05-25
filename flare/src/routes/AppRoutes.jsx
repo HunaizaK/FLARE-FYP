@@ -13,6 +13,10 @@ import SignUpApproval from '../pages/admin/SignUpApproval';
 import ReportApproval from '../pages/admin/ReportApproval';
 import ShelterApproval from '../pages/admin/ShelterApproval';
 import DonationApproval from '../pages/admin/DonationApproval';
+import LostFoundApproval from '../pages/admin/LostFoundApproval';
+import ShelterList from '../pages/admin/ShelterList';
+import UserList from '../pages/admin/UserList';
+import EditLostFound from '../pages/stubs/EditLostFound';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const ALL_ROLES = ['admin', 'organization', 'citizen'];
@@ -42,12 +46,12 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
         <Route path="/lost-found" element={
-          <ProtectedRoute allowedRoles={ORG_CITIZEN}>
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
             <LostFound />
           </ProtectedRoute>
         } />
         <Route path="/donation" element={
-          <ProtectedRoute allowedRoles={ORG_CITIZEN}>
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
             <Donation />
           </ProtectedRoute>
         } />
@@ -65,6 +69,21 @@ const AppRoutes = () => {
         } />
 
         {/* Admin only */}
+        <Route path="/lost-found/edit" element={
+          <ProtectedRoute allowedRoles={ORG_CITIZEN}>
+            <EditLostFound />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/lostfound-approvals" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <LostFoundApproval />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/users" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <UserList />
+          </ProtectedRoute>
+        } />
         <Route path="/admin/signup-approvals" element={
           <ProtectedRoute allowedRoles={['admin']}>
             <SignUpApproval />
@@ -73,6 +92,11 @@ const AppRoutes = () => {
         <Route path="/admin/report-approval" element={
           <ProtectedRoute allowedRoles={['admin']}>
             <ReportApproval />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/shelter-list" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <ShelterList />
           </ProtectedRoute>
         } />
         <Route path="/admin/shelter-approvals" element={

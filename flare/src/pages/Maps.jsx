@@ -1,5 +1,13 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+
+const FlyToHandler = ({ target }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (target) map.flyTo([target.lat, target.lon], 13);
+  }, [target, map]);
+  return null;
+};
 import { useDispatch, useSelector } from 'react-redux';
 import L from 'leaflet';
 import LayersOutlined from "@mui/icons-material/LayersOutlined";
@@ -9,10 +17,11 @@ import {
 } from '@mui/icons-material';
 import { TbWavesElectricity } from 'react-icons/tb';
 import { IoWaterOutline, IoHomeOutline } from 'react-icons/io5';
-import { MdOutlineHistory, MdOutlineRoute } from 'react-icons/md';
+import { MdOutlineHistory } from 'react-icons/md';
 import { FaEarthAmericas } from 'react-icons/fa6';
 import Navbar from '../components/Navbar';
-import { editShelter, requestDeleteShelter } from '../features/shelters/sheltersSlice';
+import { editShelter, requestDeleteShelter, syncFromStorage } from '../features/shelters/sheltersSlice';
+
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -34,17 +43,19 @@ const riverGauges = [
 ];
 
 const Maps = () => {
-  const mapRef = useRef(null);
+  const [flyTarget, setFlyTarget] = useState(null);
   const dispatch = useDispatch();
   const shelters = useSelector((state) => state.shelters.shelters);
   const accountType = useSelector((state) => state.auth.accountType);
   const currentUser = useSelector((state) => state.auth.user);
 
+  useEffect(() => { dispatch(syncFromStorage()); }, [dispatch]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showViewOptions, setShowViewOptions] = useState(false);
-  const [mapType, setMapType] = useState('map'); // 'map' or 'satellite'
+  const [mapType, setMapType] = useState('map');
   const [selectedGauge, setSelectedGauge] = useState(null);
   const [showBasinSize, setShowBasinSize] = useState(false);
   const [selectedShelter, setSelectedShelter] = useState(null);
@@ -57,54 +68,55 @@ const Maps = () => {
     riverGauges: true,
     inundationProbability: false,
     inundationHistory: false,
-    evacuationRoutes: false,
-    shelters: true, // Set to true by default so shelters are visible
+    shelters: true,
   });
 
-  const fetchSearchSuggestions = async (query) => {
+
+  const debounceRef = useRef(null);
+
+  const fetchSearchSuggestions = (query) => {
     if (!query || query.length < 2) {
       setSearchSuggestions([]);
       setShowSuggestions(false);
       return;
     }
-
-    try {
-      const response = await fetch(
-        `https://api.openrouteservice.org/geocode/autocomplete?api_key=${import.meta.env.VITE_OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}`
-      );
-      const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        setSearchSuggestions(data.features.slice(0, 5));
-        setShowSuggestions(true);
-      }
-    } catch (error) {
-      console.error('Autocomplete error:', error);
-    }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en', 'Accept': 'application/json' } }
+        );
+        const data = await res.json();
+        if (data.length > 0) {
+          setSearchSuggestions(data);
+          setShowSuggestions(true);
+        } else {
+          setSearchSuggestions([]);
+          setShowSuggestions(false);
+        }
+      } catch { }
+    }, 400);
   };
 
-  const handleSearch = async (selectedFeature = null) => {
-    if (!mapRef.current) return;
-
+  const handleSearch = async (selectedResult = null) => {
     try {
-      if (selectedFeature) {
-        const [lng, lat] = selectedFeature.geometry.coordinates;
-        mapRef.current.flyTo([lat, lng], 12);
-        setSearchQuery(selectedFeature.properties.label || selectedFeature.properties.name);
+      if (selectedResult) {
+        setFlyTarget({ lat: parseFloat(selectedResult.lat), lon: parseFloat(selectedResult.lon) });
+        setSearchQuery(selectedResult.display_name);
         setShowSuggestions(false);
       } else if (searchQuery) {
-        const response = await fetch(
-          `https://api.openrouteservice.org/geocode/search?api_key=${import.meta.env.VITE_OPENROUTE_API_KEY}&text=${encodeURIComponent(searchQuery)}`
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`,
+          { headers: { 'Accept-Language': 'en' } }
         );
-        const data = await response.json();
-        if (data.features && data.features.length > 0) {
-          const [lng, lat] = data.features[0].geometry.coordinates;
-          mapRef.current.flyTo([lat, lng], 12);
+        const data = await res.json();
+        if (data.length > 0) {
+          setFlyTarget({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
           setShowSuggestions(false);
         }
       }
-    } catch (error) {
-      console.error('Search error:', error);
-    }
+    } catch { }
   };
 
   const handleKeyPress = (e) => {
@@ -114,11 +126,9 @@ const Maps = () => {
   };
 
   const toggleLayer = (layerName) => {
-    setLayers(prev => ({
-      ...prev,
-      [layerName]: !prev[layerName],
-    }));
+    setLayers(prev => ({ ...prev, [layerName]: !prev[layerName] }));
   };
+
 
   const getMarkerColor = (level) => {
     const colors = {
@@ -210,7 +220,7 @@ const Maps = () => {
     >
       {searchSuggestions.map((suggestion, index) => (
         <div
-          key={index}
+          key={suggestion.place_id || index}
           onClick={() => handleSearch(suggestion)}
           style={{
             padding: '12px 16px',
@@ -221,10 +231,10 @@ const Maps = () => {
             color: '#1F2937',
             transition: 'background-color 0.2s',
           }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#F9FAFB'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
         >
-          {suggestion.properties.label || suggestion.properties.name}
+          {suggestion.display_name}
         </div>
       ))}
     </div>
@@ -330,11 +340,10 @@ const Maps = () => {
                       style={{
                         fontSize: '18px',
                         color: '#FFFFFF',
-                        transform: 'scale(2)',   // ⬅ makes icon bigger without thickening
+                        transform: 'scale(2)',
                       }}
                     />
                   </div>
-
 
                   {/* Text - shows opposite side */}
                   <div
@@ -574,63 +583,6 @@ const Maps = () => {
                 {/* Separator Line */}
                 <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
 
-                {/* Evacuation Routes */}
-                <div style={{ paddingBottom: '2px' }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MdOutlineRoute style={{ fontSize: '24px', color: '#000000' }} />
-                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, color: '#000000', paddingLeft: "10px"  }}>
-                        Evacuation Routes
-                      </span>
-                    </div>
-                    <label className="relative inline-block" style={{ width: '48px', height: '24px' }}>
-                      <input
-                        type="checkbox"
-                        checked={layers.evacuationRoutes}
-                        onChange={() => toggleLayer('evacuationRoutes')}
-                        className="opacity-0 w-0 h-0"
-                      />
-                      <span
-                        style={{
-                          position: 'absolute',
-                          cursor: 'pointer',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          backgroundColor: layers.evacuationRoutes ? '#3a88d6ff' : '#D1D5DB',
-                          borderRadius: '24px',
-                          transition: 'background-color 0.2s',
-                        }}
-                      >
-                        <span
-                          style={{
-                            position: 'absolute',
-                            content: '""',
-                            height: '20px',
-                            width: '20px',
-                            left: layers.evacuationRoutes ? '26px' : '2px',
-                            bottom: '2px',
-                            backgroundColor: 'white',
-                            borderRadius: '50%',
-                            transition: 'left 0.2s',
-                          }}
-                        />
-                      </span>
-                    </label>
-                  </div>
-                  {layers.evacuationRoutes && (
-                    <div style={{ marginTop: '12px', marginLeft: '36px' }}>
-                      <div className="flex items-center gap-3">
-                        <div style={{ width: '12px', height: '12px',  borderRadius: '50%',backgroundColor: '#FDE047' }} />
-                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Evacuation Path</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {/* Separator Line */}
-                <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
-
                 {/* Shelter */}
                 <div style={{ paddingBottom: '2px' }}>
                   <div className="flex items-center justify-between">
@@ -688,16 +640,16 @@ const Maps = () => {
             center={[center.lat, center.lng]}
             zoom={8}
             style={{ width: '100%', height: '100%' }}
-            ref={mapRef}
           >
+            <FlyToHandler target={flyTarget} />
             <TileLayer
-              url={mapType === 'satellite' 
-                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              url={mapType === 'satellite'
+                ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
               }
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            
+
             {/* River Gauge Markers */}
             {layers.riverGauges && riverGauges.map((gauge) => (
               <Marker

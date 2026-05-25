@@ -49,7 +49,7 @@ const Login = () => {
     dispatch(setUser(account.userName));
     dispatch(setAccountType(account.role));
 
-    navigate(account.role === 'admin' ? '/admin/signup-approvals' : '/maps');
+    navigate('/maps');
   };
 
   const handleForgotPassword = () => {

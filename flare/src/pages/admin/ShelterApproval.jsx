@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { approveShelter, rejectShelter, approveDeleteShelter, rejectDeleteShelter } from '../../features/shelters/sheltersSlice';
+import { approveShelter, rejectShelter, approveDeleteShelter, rejectDeleteShelter, approveEditShelter, rejectEditShelter, syncFromStorage } from '../../features/shelters/sheltersSlice';
 import Navbar from '../../components/Navbar';
 import {
   SearchOutlined,
@@ -9,6 +10,7 @@ import {
   KeyboardArrowUpOutlined,
   KeyboardArrowDownOutlined,
   UnfoldMoreOutlined,
+  ArrowBackOutlined,
 } from '@mui/icons-material';
 
 
@@ -43,8 +45,9 @@ const ShelterTable = ({ title, rows, onAccept, onReject }) => {
     const q = searchQuery.toLowerCase();
     const filtered = rows.filter(
       (r) =>
-        r.email.toLowerCase().includes(q) ||
-        r.phone.toLowerCase().includes(q)
+        (r.email    ?? '').toLowerCase().includes(q) ||
+        (r.phone    ?? '').toLowerCase().includes(q) ||
+        (r.name     ?? '').toLowerCase().includes(q)
     );
     return [...filtered].sort((a, b) => {
       const av = a[sortField] ?? '';
@@ -254,14 +257,20 @@ const ShelterTable = ({ title, rows, onAccept, onReject }) => {
 
 /* ── Page ─────────────────────────────────────────────────── */
 const ShelterApproval = () => {
+  const navigate               = useNavigate();
   const dispatch               = useDispatch();
   const pendingAddShelters     = useSelector((state) => state.shelters.pendingAddShelters);
   const pendingDeleteShelters  = useSelector((state) => state.shelters.pendingDeleteShelters);
+  const pendingEditShelters    = useSelector((state) => state.shelters.pendingEditShelters);
+
+  useEffect(() => { dispatch(syncFromStorage()); }, [dispatch]);
 
   const handleApprove      = (id) => dispatch(approveShelter(id));
   const handleReject       = (id) => dispatch(rejectShelter(id));
   const handleDeleteAccept = (id) => dispatch(approveDeleteShelter(id));
   const handleDeleteReject = (id) => dispatch(rejectDeleteShelter(id));
+  const handleEditAccept   = (id) => dispatch(approveEditShelter(id));
+  const handleEditReject   = (id) => dispatch(rejectEditShelter(id));
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-white">
@@ -273,15 +282,26 @@ const ShelterApproval = () => {
       >
         <div style={{ padding: '40px 40px 40px 30px' }}>
 
-          <h1 style={{
-            fontFamily: 'Lexend, sans-serif',
-            fontSize: '28px',
-            fontWeight: 600,
-            color: '#000000',
-            marginBottom: '36px',
-          }}>
-            Shelter Approvals
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '36px' }}>
+            <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 600, color: '#000000', margin: 0 }}>
+              Shelter Approvals
+            </h1>
+            <button
+              onClick={() => navigate('/admin/shelter-list')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                height: '48px', padding: '0 24px', borderRadius: '12px',
+                backgroundColor: '#b7c9dc', border: 'none', outline: 'none', cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000',
+                boxShadow: '0 0px 12px rgba(0, 0, 0, 0.18)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8f9dad'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#b7c9dc'}
+            >
+              <ArrowBackOutlined style={{ fontSize: '18px', color: '#000000' }} />
+              Back
+            </button>
+          </div>
 
           <ShelterTable
             title="Add Shelter Approval"
@@ -297,6 +317,15 @@ const ShelterApproval = () => {
             rows={pendingDeleteShelters}
             onAccept={handleDeleteAccept}
             onReject={handleDeleteReject}
+          />
+
+          <div style={{ height: '1px', backgroundColor: '#E5E7EB', marginBottom: '40px' }} />
+
+          <ShelterTable
+            title="Edit Shelter Approval"
+            rows={pendingEditShelters}
+            onAccept={handleEditAccept}
+            onReject={handleEditReject}
           />
 
         </div>

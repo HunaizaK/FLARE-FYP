@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import {
   SearchOutlined,
@@ -7,6 +8,7 @@ import {
   KeyboardArrowUpOutlined,
   KeyboardArrowDownOutlined,
   UnfoldMoreOutlined,
+  ArrowBackOutlined,
 } from '@mui/icons-material';
 
 const loadAddRequests = () => {
@@ -19,6 +21,13 @@ const loadAddRequests = () => {
 const loadDeleteRequests = () => {
   try {
     return JSON.parse(localStorage.getItem('flare_pending_delete_donations') || '[]')
+      .map((r) => ({ ...r, accountHolder: r.name }));
+  } catch { return []; }
+};
+
+const loadEditRequests = () => {
+  try {
+    return JSON.parse(localStorage.getItem('flare_pending_edit_donations') || '[]')
       .map((r) => ({ ...r, accountHolder: r.name }));
   } catch { return []; }
 };
@@ -274,12 +283,15 @@ const DonationTable = ({ title, initialData, onAccept, onReject }) => {
 };
 
 const DonationApproval = () => {
+  const navigate = useNavigate();
   const [addRequests, setAddRequests]       = useState(loadAddRequests);
   const [deleteRequests, setDeleteRequests] = useState(loadDeleteRequests);
+  const [editRequests, setEditRequests]     = useState(loadEditRequests);
 
   useEffect(() => {
     setAddRequests(loadAddRequests());
     setDeleteRequests(loadDeleteRequests());
+    setEditRequests(loadEditRequests());
   }, []);
 
   const handleAddAccept = (id) => {
@@ -314,6 +326,28 @@ const DonationApproval = () => {
     setDeleteRequests((prev) => prev.filter((r) => r.id !== id));
   };
 
+  const handleEditAccept = (id) => {
+    const pending = JSON.parse(localStorage.getItem('flare_pending_edit_donations') || '[]');
+    const edit = pending.find((r) => r.id === id);
+    if (edit) {
+      const donations = JSON.parse(localStorage.getItem('flare_donations') || '[]');
+      localStorage.setItem('flare_donations', JSON.stringify(
+        donations.map((d) => d.id === edit.originalId
+          ? { ...d, name: edit.name, bankName: edit.bankName, iban: edit.iban }
+          : d
+        )
+      ));
+    }
+    localStorage.setItem('flare_pending_edit_donations', JSON.stringify(pending.filter((r) => r.id !== id)));
+    setEditRequests((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const handleEditReject = (id) => {
+    const pending = JSON.parse(localStorage.getItem('flare_pending_edit_donations') || '[]');
+    localStorage.setItem('flare_pending_edit_donations', JSON.stringify(pending.filter((r) => r.id !== id)));
+    setEditRequests((prev) => prev.filter((r) => r.id !== id));
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-white">
       <Navbar />
@@ -324,9 +358,26 @@ const DonationApproval = () => {
       >
         <div style={{ padding: '40px 40px 40px 30px' }}>
 
-          <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 600, color: '#000000', marginBottom: '36px' }}>
-            Donation Approvals
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '36px' }}>
+            <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 600, color: '#000000', margin: 0 }}>
+              Donation Approvals
+            </h1>
+            <button
+              onClick={() => navigate('/donation')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                height: '48px', padding: '0 24px', borderRadius: '12px',
+                backgroundColor: '#b7c9dc', border: 'none', outline: 'none', cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000',
+                boxShadow: '0 0px 12px rgba(0, 0, 0, 0.18)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8f9dad'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#b7c9dc'}
+            >
+              <ArrowBackOutlined style={{ fontSize: '18px', color: '#000000' }} />
+              Back
+            </button>
+          </div>
 
           <DonationTable
             title="Add Donation Approval"
@@ -342,6 +393,15 @@ const DonationApproval = () => {
             initialData={deleteRequests}
             onAccept={handleDeleteAccept}
             onReject={handleDeleteReject}
+          />
+
+          <div style={{ height: '1px', backgroundColor: '#E5E7EB', marginBottom: '40px' }} />
+
+          <DonationTable
+            title="Edit Donation Approval"
+            initialData={editRequests}
+            onAccept={handleEditAccept}
+            onReject={handleEditReject}
           />
 
         </div>

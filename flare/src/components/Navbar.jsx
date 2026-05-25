@@ -9,9 +9,6 @@ import {
   VolunteerActivismOutlined,
   SettingsOutlined,
   HowToRegOutlined,
-  AssignmentTurnedInOutlined,
-  RequestQuoteOutlined,
-  HomeWorkOutlined,
 } from '@mui/icons-material';
 
 const Navbar = () => {
@@ -42,10 +39,11 @@ const Navbar = () => {
   // Admin menu items
   const adminMenuItems = [
     { icon: <MapOutlined />,                  label: 'Maps',                path: '/maps' },
-    { icon: <HowToRegOutlined />,             label: 'Sign-up Approvals',   path: '/admin/signup-approvals' },
-    { icon: <AssignmentTurnedInOutlined />,   label: 'Report Approval',     path: '/admin/report-approval' },
-    { icon: <HomeWorkOutlined />,             label: 'Shelter Approvals',   path: '/admin/shelter-approvals' },
-    { icon: <RequestQuoteOutlined />,         label: 'Donation Approvals',  path: '/admin/donation-approvals' },
+    { icon: <HowToRegOutlined />,             label: 'Sign-up Approvals',   path: '/admin/users' },
+    { icon: <AssessmentOutlined />,            label: 'Report Approval',     path: '/admin/report-approval' },
+    { icon: <CottageOutlined />,              label: 'Shelter Approvals',   path: '/admin/shelter-list' },
+    { icon: <LuggageOutlined />,               label: 'Lost & Found',        path: '/lost-found' },
+    { icon: <VolunteerActivismOutlined />,     label: 'Donation',            path: '/donation' },
     { icon: <SettingsOutlined />,             label: 'Settings',            path: '/settings' },
   ];
 

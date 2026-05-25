@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import {
   SearchOutlined,
@@ -7,6 +8,7 @@ import {
   KeyboardArrowUpOutlined,
   KeyboardArrowDownOutlined,
   UnfoldMoreOutlined,
+  ArrowBackOutlined,
 } from '@mui/icons-material';
 
 const loadPendingOrgs = () => {
@@ -34,6 +36,7 @@ const COLUMNS = [
 ];
 
 const SignUpApproval = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState(loadPendingOrgs);
   const [sortField, setSortField] = useState('submittedAt');
@@ -100,18 +103,26 @@ const SignUpApproval = () => {
       >
         <div style={{ padding: '40px 40px 40px 30px' }}>
 
-          {/* Page title */}
-          <h1
-            style={{
-              fontFamily: 'Lexend, sans-serif',
-              fontSize: '28px',
-              fontWeight: 600,
-              color: '#000000',
-              marginBottom: '28px',
-            }}
-          >
-            Sign-up Approvals
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+            <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 600, color: '#000000', margin: 0 }}>
+              Sign-up Approvals
+            </h1>
+            <button
+              onClick={() => navigate('/admin/users')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                height: '48px', padding: '0 24px', borderRadius: '12px',
+                backgroundColor: '#b7c9dc', border: 'none', outline: 'none', cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000',
+                boxShadow: '0 0px 12px rgba(0, 0, 0, 0.18)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8f9dad'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#b7c9dc'}
+            >
+              <ArrowBackOutlined style={{ fontSize: '18px', color: '#000000' }} />
+              Back
+            </button>
+          </div>
 
           {/* Search bar */}
           <div style={{ maxWidth: '560px', marginBottom: '32px' }}>

@@ -1,10 +1,23 @@
-import { useState } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+
+const FlyToHandler = ({ target }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (target) map.flyTo([target.lat, target.lon], 13);
+  }, [target, map]);
+  return null;
+};
+
+const MapClickHandler = ({ onMapClick }) => {
+  useMapEvents({ click: (e) => onMapClick(e.latlng) });
+  return null;
+};
 import { useDispatch, useSelector } from 'react-redux';
-import { submitShelter, editShelter, requestDeleteShelter } from '../../features/shelters/sheltersSlice';
+import { submitShelter, editShelter, requestDeleteShelter, syncFromStorage } from '../../features/shelters/sheltersSlice';
 import L from 'leaflet';
-import { FaEarthAmericas } from 'react-icons/fa6';
 import { CloseOutlined } from '@mui/icons-material';
+import { FaEarthAmericas } from 'react-icons/fa6';
 import Navbar from '../../components/Navbar';
 
 const center = [34.063056, 74.834444];
@@ -12,6 +25,8 @@ const center = [34.063056, 74.834444];
 const ShelterManagement = () => {
   const dispatch = useDispatch();
   const shelters = useSelector((state) => state.shelters.shelters);
+
+  useEffect(() => { dispatch(syncFromStorage()); }, [dispatch]);
   const userEmail = useSelector((state) => state.auth.user);
   const [showApprovalPopup, setShowApprovalPopup] = useState(false);
   const [selectedShelter, setSelectedShelter] = useState(null);
@@ -21,7 +36,9 @@ const ShelterManagement = () => {
   const [markerPosition, setMarkerPosition] = useState(null);
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [mapType, setMapType] = useState('map'); // 'map' or 'satellite'
+  const [pickedLatLng, setPickedLatLng] = useState(null);
+  const [flyTarget, setFlyTarget]       = useState(null);
+  const [mapType, setMapType]           = useState('map');
   const [formData, setFormData] = useState({
     location: '',
     shelterName: '',
@@ -40,81 +57,103 @@ const ShelterManagement = () => {
     }
   };
 
-  const fetchLocationSuggestions = async (query) => {
+  const debounceRef = useRef(null);
+
+  const fetchLocationSuggestions = (query) => {
     if (!query || query.length < 2) {
       setLocationSuggestions([]);
       setShowSuggestions(false);
       return;
     }
-
-    try {
-      const response = await fetch(
-        `https://api.openrouteservice.org/geocode/autocomplete?api_key=${import.meta.env.VITE_OPENROUTE_API_KEY}&text=${encodeURIComponent(query)}`
-      );
-      const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        setLocationSuggestions(data.features.slice(0, 5));
-        setShowSuggestions(true);
-      } else {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en', 'Accept': 'application/json' } }
+        );
+        const data = await res.json();
+        if (data.length > 0) {
+          setLocationSuggestions(data);
+          setShowSuggestions(true);
+        } else {
+          setLocationSuggestions([]);
+          setShowSuggestions(false);
+        }
+      } catch {
         setLocationSuggestions([]);
         setShowSuggestions(false);
       }
-    } catch (error) {
-      console.error('Autocomplete error:', error);
-      setLocationSuggestions([]);
-      setShowSuggestions(false);
-    }
+    }, 400);
   };
 
   const selectLocation = (suggestion) => {
-    setFormData(prev => ({
-      ...prev,
-      location: suggestion.properties.label || suggestion.properties.name
-    }));
+    const lat = parseFloat(suggestion.lat);
+    const lon = parseFloat(suggestion.lon);
+    setFormData((prev) => ({ ...prev, location: suggestion.display_name }));
+    setPickedLatLng({ lat, lon });
+    setFlyTarget({ lat, lon });
     setShowSuggestions(false);
   };
 
   const handleAdd = async () => {
-    if (formData.location && formData.shelterName) {
-      try {
-        const response = await fetch(
-          `https://api.openrouteservice.org/geocode/search?api_key=${import.meta.env.VITE_OPENROUTE_API_KEY}&text=${encodeURIComponent(formData.location)}`
+    if (!formData.location || !formData.shelterName) return;
+    try {
+      let lat, lng;
+      if (pickedLatLng) {
+        lat = pickedLatLng.lat;
+        lng = pickedLatLng.lon;
+      } else {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(formData.location)}&format=json&limit=1`,
+          { headers: { 'Accept': 'application/json', 'Accept-Language': 'en' } }
         );
-        const data = await response.json();
-
-        if (data.features && data.features.length > 0) {
-          const [lng, lat] = data.features[0].geometry.coordinates;
-
-          const newShelter = {
-            id: Date.now().toString(),
-            name: formData.shelterName,
-            location: formData.location,
-            phone: formData.phone,
-            email: userEmail || 'org@flare.com',
-            lat,
-            lng,
-          };
-
-          dispatch(submitShelter(newShelter));
-          setMarkerPosition([lat, lng]);
-          setShowApprovalPopup(true);
-        } else {
-          alert('Location not found. Please enter a valid location.');
-        }
-      } catch (error) {
-        console.error('Geocoding error:', error);
-        alert('Error finding location. Please try again.');
+        const data = await res.json();
+        if (!data.length) { alert('Location not found. Please select from the dropdown suggestions.'); return; }
+        lat = parseFloat(data[0].lat);
+        lng = parseFloat(data[0].lon);
       }
+      setFlyTarget({ lat, lon: lng });
+      dispatch(submitShelter({
+        id:       Date.now().toString(),
+        name:     formData.shelterName,
+        location: formData.location,
+        phone:    formData.phone,
+        email:    userEmail || 'org@flare.com',
+        lat,
+        lng,
+      }));
+      setMarkerPosition([lat, lng]);
+      setShowApprovalPopup(true);
+    } catch {
+      alert('Error finding location. Please try again.');
+    }
+  };
+
+  const handleMapClick = async ({ lat, lng }) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+        { headers: { 'Accept-Language': 'en', 'Accept': 'application/json' } }
+      );
+      const data = await res.json();
+      const address = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      setFormData((prev) => ({ ...prev, location: address }));
+      setPickedLatLng({ lat, lon: lng });
+      setMarkerPosition([lat, lng]);
+      setFlyTarget({ lat, lon: lng });
+    } catch {
+      setFormData((prev) => ({ ...prev, location: `${lat.toFixed(5)}, ${lng.toFixed(5)}` }));
+      setPickedLatLng({ lat, lon: lng });
+      setMarkerPosition([lat, lng]);
     }
   };
 
   const handleClosePopup = () => {
     setShowApprovalPopup(false);
-    setFormData({
-      location: '',
-      shelterName: '',
-      phone: '',
-    });
+    setFormData({ location: '', shelterName: '', phone: '' });
+    setPickedLatLng(null);
+    setFlyTarget(null);
     setMarkerPosition(null);
   };
 
@@ -125,16 +164,19 @@ const ShelterManagement = () => {
       <Navbar />
 
       <div className="absolute top-0 h-full transition-all duration-300" style={{ left: '0', width: '100%' }}>
+
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
           <MapContainer
             center={center}
             zoom={8}
             style={{ width: '100%', height: '100%' }}
           >
+            <FlyToHandler target={flyTarget} />
+            <MapClickHandler onMapClick={handleMapClick} />
             <TileLayer
               url={mapType === 'satellite'
-                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
               }
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
@@ -184,22 +226,8 @@ const ShelterManagement = () => {
             zIndex: 10,
           }}
         >
-          <h2
-            style={{
-              fontFamily: 'Lexend, sans-serif',
-              fontSize: '24px',
-              fontWeight: 600,
-              color: '#000000',
-              marginTop: '0',
-              marginBottom: '20px',
-            }}
-          >
-            Add Shelter
-          </h2>
-          {/* Separator Line */}
-          <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '15px 0' }} />
-          {/* Map Type Toggle */}
-          <div className="mb-6 flex justify-center">
+          {/* Satellite / Map toggle */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
             <div
               style={{
                 width: '165px',
@@ -213,7 +241,6 @@ const ShelterManagement = () => {
               }}
               onClick={() => setMapType(mapType === 'map' ? 'satellite' : 'map')}
             >
-              {/* Sliding Earth Icon with black circle background */}
               <div
                 style={{
                   position: 'absolute',
@@ -231,16 +258,8 @@ const ShelterManagement = () => {
                   justifyContent: 'center',
                 }}
               >
-                <FaEarthAmericas
-                  style={{
-                    fontSize: '18px',
-                    color: '#FFFFFF',
-                    transform: 'scale(2)',
-                  }}
-                />
+                <FaEarthAmericas style={{ fontSize: '18px', color: '#FFFFFF', transform: 'scale(2)' }} />
               </div>
-
-              {/* Text - shows opposite side */}
               <div
                 style={{
                   width: '100%',
@@ -260,6 +279,19 @@ const ShelterManagement = () => {
               </div>
             </div>
           </div>
+
+          <h2
+            style={{
+              fontFamily: 'Lexend, sans-serif',
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#000000',
+              marginTop: '0',
+              marginBottom: '20px',
+            }}
+          >
+            Add Shelter
+          </h2>
           {/* Separator Line */}
           <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '15px 0' }} />
           <div style={{ marginBottom: '24px', position: 'relative' }}>
@@ -314,7 +346,7 @@ const ShelterManagement = () => {
               >
                 {locationSuggestions.map((suggestion, index) => (
                   <div
-                    key={index}
+                    key={suggestion.place_id || index}
                     onClick={() => selectLocation(suggestion)}
                     style={{
                       padding: '10px 16px',
@@ -325,10 +357,10 @@ const ShelterManagement = () => {
                       color: '#1F2937',
                       transition: 'background-color 0.2s',
                     }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#F9FAFB'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    {suggestion.properties.label || suggestion.properties.name}
+                    {suggestion.display_name}
                   </div>
                 ))}
               </div>

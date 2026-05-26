@@ -1,0 +1,80 @@
+{
+  "Kotli": {
+    "lat": 33.488889,
+    "lon": 73.884722,
+    "station": "KOTLI",
+    "river": "POONCH"
+  },
+  "Phulra": {
+    "lat": 34.313889,
+    "lon": 73.078333,
+    "station": "PHULRA",
+    "river": "SIRAN"
+  },
+  "Besham_Qila": {
+    "lat": 34.924167,
+    "lon": 72.881944,
+    "station": "BESHAM QILA",
+    "river": "INDUS"
+  },
+  "Bunji": {
+    "lat": 35.664722,
+    "lon": 74.628333,
+    "station": "BUNJI",
+    "river": "INDUS"
+  },
+  "Shatial_Bridge": {
+    "lat": 35.532222,
+    "lon": 73.564444,
+    "station": "SHATIAL BRIDGE",
+    "river": "INDUS"
+  },
+  "Chakothi": {
+    "lat": 34.108056,
+    "lon": 73.9025,
+    "station": "CHAKOTHI",
+    "river": "JHELUM"
+  },
+  "Chattar_Kalass": {
+    "lat": 34.208333,
+    "lon": 73.5,
+    "station": "CHATTAR KALASS",
+    "river": "JHELUM"
+  },
+  "Domel": {
+    "lat": 34.366667,
+    "lon": 73.466667,
+    "station": "DOMEL",
+    "river": "JHELUM"
+  },
+  "Hattian_Bala": {
+    "lat": 34.166667,
+    "lon": 73.75,
+    "station": "HATTIAN BALA",
+    "river": "JHELUM"
+  },
+  "Kaghan": {
+    "lat": 34.558333,
+    "lon": 73.508333,
+    "station": "Kaghan",
+    "river": "Kunhar"
+  },
+  "Talhata_Bridge": {
+    "lat": 34.472222,
+    "lon": 73.341667,
+    "station": "TALHATA",
+    "river": "KUNHAR"
+  },
+  "Dhudhnial": {
+    "lat": 34.704722,
+    "lon": 74.105833,
+    "station": "DUDHNIAL",
+    "river": "NEELUM"
+  },
+  "Muzaffarabad": {
+    "lat": 34.366667,
+    "lon": 73.466667,
+    "station": "MUZAFFAR ABAD",
+    "river": "NEELUM"
+  }
+}

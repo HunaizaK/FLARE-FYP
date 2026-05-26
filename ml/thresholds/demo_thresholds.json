@@ -1,0 +1,67 @@
+{
+  "Besham_Qila": {
+    "warning": 6687.0,
+    "severe": 8916.0,
+    "extreme": 10587.8
+  },
+  "Bunji": {
+    "warning": 5541.0,
+    "severe": 7388.0,
+    "extreme": 8773.2
+  },
+  "Chakothi": {
+    "warning": 457.9,
+    "severe": 610.6,
+    "extreme": 725.0
+  },
+  "Chattar_Kalass": {
+    "warning": 1258.2,
+    "severe": 1677.6,
+    "extreme": 1992.1
+  },
+  "Dhudhnial": {
+    "warning": 576.4,
+    "severe": 768.6,
+    "extreme": 912.7
+  },
+  "Domel": {
+    "warning": 499.9,
+    "severe": 666.5,
+    "extreme": 791.4
+  },
+  "Hattian_Bala": {
+    "warning": 482.3,
+    "severe": 643.1,
+    "extreme": 763.7
+  },
+  "Kaghan": {
+    "warning": 102.5,
+    "severe": 136.7,
+    "extreme": 162.4
+  },
+  "Kotli": {
+    "warning": 337.3,
+    "severe": 449.8,
+    "extreme": 534.1
+  },
+  "Muzaffarabad": {
+    "warning": 561.8,
+    "severe": 749.0,
+    "extreme": 889.5
+  },
+  "Phulra": {
+    "warning": 189.1,
+    "severe": 252.1,
+    "extreme": 299.3
+  },
+  "Shatial_Bridge": {
+    "warning": 6194.1,
+    "severe": 8258.8,
+    "extreme": 9807.4
+  },
+  "Talhata_Bridge": {
+    "warning": 209.5,
+    "severe": 279.3,
+    "extreme": 331.6
+  }
+}

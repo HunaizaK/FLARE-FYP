@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import {
+  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ReferenceLine, ResponsiveContainer,
+} from 'recharts';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 
 const FlyToHandler = ({ target }) => {
@@ -36,11 +40,6 @@ const center = {
   lng: 74.46,
 };
 
-// River gauge markers - Chenab and Jhelum only
-const riverGauges = [
-  { id: 'chenab_station', position: { lat: 32.65, lng: 74.46 }, level: 'noData', name: 'Chenab River Station' },
-  { id: 'jhelum_station', position: { lat: 33.73, lng: 73.73 }, level: 'noData', name: 'Jhelum River Station' },
-];
 
 const Maps = () => {
   const [flyTarget, setFlyTarget] = useState(null);
@@ -50,6 +49,22 @@ const Maps = () => {
   const currentUser = useSelector((state) => state.auth.user);
 
   useEffect(() => { dispatch(syncFromStorage()); }, [dispatch]);
+
+  useEffect(() => {
+    fetch('http://localhost:8001/api/gauges')
+      .then(res => res.json())
+      .then(data => {
+        const mapped = data.gauges.map(g => ({
+          id: g.id,
+          name: `${g.name} - ${g.river} River`,
+          position: { lat: g.lat, lng: g.lon },
+          level: g.status,
+          t1_forecast: g.t1_forecast,
+        }));
+        setRiverGauges(mapped);
+      })
+      .catch(() => {});
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState([]);
@@ -62,6 +77,8 @@ const Maps = () => {
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', phone: '' });
   const [showDeleteToast, setShowDeleteToast] = useState(false);
+  const [riverGauges, setRiverGauges] = useState([]);
+  const [selectedGaugeForecast, setSelectedGaugeForecast] = useState(null);
 
   // Layer toggles
   const [layers, setLayers] = useState({
@@ -143,7 +160,47 @@ const Maps = () => {
 
   const handleMarkerClick = (gauge) => {
     setSelectedGauge(gauge);
+    setSelectedGaugeForecast(null);
+    fetch(`http://localhost:8001/api/gauges/${gauge.id}`)
+      .then(res => res.json())
+      .then(data => setSelectedGaugeForecast(data))
+      .catch(() => {});
   };
+
+  const fmtDate  = (v) => { const d = new Date(v); return `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, '0')}`; };
+  const nowDate  = selectedGaugeForecast?.forecast?.[0]
+    ? fmtDate(selectedGaugeForecast.forecast[0].date)
+    : null;
+  const _hist     = selectedGaugeForecast?.historical ?? [];
+  const _forecast = selectedGaugeForecast?.forecast   ?? [];
+  const _f0       = _forecast[0];
+  const chartData = _f0 ? [
+    ..._hist.map(d => ({
+      date: fmtDate(d.date),
+      historical: d.discharge,
+    })),
+    {
+      date:       fmtDate(_f0.date),
+      historical: _f0.predicted,
+      forecast:   _f0.predicted,
+      upper_80:   _f0.upper_80,
+    },
+    ..._forecast.slice(1).map(d => ({
+      date:     fmtDate(d.date),
+      forecast: d.predicted,
+      upper_80: d.upper_80,
+    })),
+  ] : [];
+  const warning  = selectedGaugeForecast?.thresholds?.warning ?? null;
+  const danger   = selectedGaugeForecast?.thresholds?.danger  ?? null;
+  const severe   = selectedGaugeForecast?.thresholds?.severe  ?? null;
+  const extreme  = severe != null ? +(severe * 1.3).toFixed(1) : null;
+  const maxDischarge = chartData.length
+    ? Math.max(...chartData.map(d => d.historical ?? d.forecast ?? 0))
+    : 0;
+  const yMax = extreme != null
+    ? Math.ceil(extreme * 1.2 / 1000) * 1000
+    : Math.ceil(maxDischarge * 1.2 / 100) * 100;
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-white">
@@ -864,7 +921,7 @@ const Maps = () => {
             }}
           >
             <button
-              onClick={() => setSelectedGauge(null)}
+              onClick={() => { setSelectedGauge(null); setSelectedGaugeForecast(null); }}
               style={{ 
                 position: 'absolute',
                 top: '20px',
@@ -880,80 +937,104 @@ const Maps = () => {
 
             <div className="flex h-full" style={{ gap: '40px', maxWidth: '1400px', margin: '0 auto' }}>
               {/* Left side - Chart */}
-              <div 
-                style={{ 
+              <div
+                style={{
                   flex: '0 0 420px',
                   border: '1px solid #E5E7EB',
                   borderRadius: '8px',
-                  padding: '20px',
+                  padding: '12px 16px 8px',
                   backgroundColor: '#FAFAFA',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
               >
-                {/* Chart Title and Legend */}
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', fontFamily: 'Inter, sans-serif' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '30px', borderTop: '2px solid #000000' }}></div>
-                      <span style={{ color: '#6B7280' }}>"Now" (until a vertical dashed line)</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '30px', borderTop: '2px solid #FB9B2D' }}></div>
-                      <span style={{ color: '#6B7280' }}>"Warning Level" (orange line 105.6 level)</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '30px', borderTop: '2px solid #FF1519' }}></div>
-                      <span style={{ color: '#6B7280' }}>"Danger Level" (orange line 105.6 level)</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '30px', borderTop: '2px dashed #000000' }}></div>
-                      <span style={{ color: '#6B7280' }}>"Projected level" (dotted black line)</span>
-                    </div>
-                  </div>
-                </div>
+                {chartData.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height={195}>
+                      <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 9, fontFamily: 'Inter, sans-serif', fill: '#6B7280' }}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 9, fontFamily: 'Inter, sans-serif', fill: '#6B7280' }}
+                          tickLine={false}
+                          width={50}
+                          domain={[0, yMax || 'auto']}
+                          label={{
+                            value: 'Discharge in m³/s',
+                            angle: -90,
+                            position: 'insideLeft',
+                            offset: 10,
+                            style: { fontSize: 9, fontFamily: 'Inter, sans-serif', fill: '#6B7280', textAnchor: 'middle' },
+                          }}
+                        />
+                        <Tooltip
+                          formatter={(v, name) => {
+                            if (['upper_80', 'forecast'].includes(name)) return null;
+                            if (name === 'historical') return [v != null ? v.toFixed(1) : '—', 'Discharge'];
+                            return null;
+                          }}
+                          contentStyle={{ fontSize: 11, fontFamily: 'Inter, sans-serif', borderRadius: 6 }}
+                        />
 
-                {/* Chart Placeholder */}
-                <div style={{ 
-                  height: 'calc(100% - 100px)',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  backgroundColor: '#FFFFFF',
-                }}>
-                  {/* Y-axis label */}
-                  <div style={{
-                    position: 'absolute',
-                    left: '-5px',
-                    top: '50%',
-                    transform: 'rotate(-90deg) translateY(-50%)',
-                    transformOrigin: 'left center',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '11px',
-                    color: '#6B7280',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    River Level (m)
-                  </div>
+                        {/* Shaded area under forecast line */}
+                        <Area type="monotone" dataKey="forecast" stroke="none" fill="#BFDBFE" fillOpacity={0.4} legendType="none" dot={false} activeDot={false} connectNulls={false} />
 
-                  {/* X-axis label */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-20px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '11px',
-                    color: '#6B7280',
-                  }}>
-                    Time (Date)
-                  </div>
+                        {/* Threshold horizontal lines — drawn before Lines so they sit beneath the data */}
+                        {warning != null && (
+                          <ReferenceLine y={Number(warning)} stroke="#F97316" strokeWidth={2} strokeDasharray="0" ifOverflow="visible" />
+                        )}
+                        {danger != null && (
+                          <ReferenceLine y={Number(danger)} stroke="#EF4444" strokeWidth={2} strokeDasharray="0" ifOverflow="visible" />
+                        )}
+                        {extreme != null && (
+                          <ReferenceLine y={Number(extreme)} stroke="#991B1B" strokeWidth={2} strokeDasharray="0" ifOverflow="visible" />
+                        )}
 
-                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#9CA3AF' }}>
-                    Chart visualization
-                  </span>
-                </div>
+                        {/* Historical — solid blue, renders only points where historical is set */}
+                        <Line type="monotone" dataKey="historical" stroke="#3988d6" strokeWidth={2} dot={{ r: 2, fill: '#3988d6', strokeWidth: 0 }} activeDot={{ r: 4 }} legendType="none" connectNulls={false} />
+
+                        {/* Forecast — dashed blue, renders only points where forecast is set */}
+                        <Line type="monotone" dataKey="forecast" stroke="#3988d6" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 2, fill: '#3988d6', strokeWidth: 0 }} activeDot={{ r: 4 }} legendType="none" connectNulls={false} />
+
+                        {/* "Now" vertical line at first forecast date */}
+                        {nowDate && (
+                          <ReferenceLine
+                            x={nowDate}
+                            stroke="#9CA3AF"
+                            strokeDasharray="4 4"
+                            label={{ value: 'Now', position: 'insideTopRight', fontSize: 9, fill: '#6B7280', fontFamily: 'Inter, sans-serif' }}
+                          />
+                        )}
+                      </ComposedChart>
+                    </ResponsiveContainer>
+
+                    {/* Bottom legend — Warning / Danger / Extreme with live threshold values */}
+                    <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '6px', fontSize: '10px', fontFamily: 'Inter, sans-serif' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: '22px', borderTop: '2px solid #FB9B2D' }} />
+                        <span style={{ color: '#6B7280' }}>Warning{warning != null ? ` (${warning.toFixed(1)})` : ''}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: '22px', borderTop: '2px solid #FF1519' }} />
+                        <span style={{ color: '#6B7280' }}>Danger{danger != null ? ` (${danger.toFixed(1)})` : ''}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: '22px', borderTop: '2px solid #952426' }} />
+                        <span style={{ color: '#6B7280' }}>Extreme{extreme != null ? ` (${extreme.toFixed(1)})` : ''}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#9CA3AF' }}>
+                      {selectedGauge ? 'Loading chart…' : 'Select a gauge'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Vertical Separator Line */}
@@ -986,13 +1067,13 @@ const Maps = () => {
                         }}>
                           River Gauge ID
                         </p>
-                        <p style={{ 
-                          fontFamily: 'Inter, sans-serif', 
-                          fontSize: '15px', 
+                        <p style={{
+                          fontFamily: 'Inter, sans-serif',
+                          fontSize: '15px',
                           fontWeight: 500,
                           color: '#000000',
                         }}>
-                          hybas_4120703600
+                          {selectedGaugeForecast?.id ?? '—'}
                         </p>
                       </div>
 
@@ -1006,13 +1087,13 @@ const Maps = () => {
                         }}>
                           Source
                         </p>
-                        <p style={{ 
-                          fontFamily: 'Inter, sans-serif', 
-                          fontSize: '15px', 
+                        <p style={{
+                          fontFamily: 'Inter, sans-serif',
+                          fontSize: '15px',
                           fontWeight: 500,
                           color: '#000000',
                         }}>
-                          WAPDA
+                          {selectedGaugeForecast?.source ?? '—'}
                         </p>
                       </div>
 
@@ -1026,13 +1107,15 @@ const Maps = () => {
                         }}>
                           Lat/Long
                         </p>
-                        <p style={{ 
-                          fontFamily: 'Inter, sans-serif', 
-                          fontSize: '15px', 
+                        <p style={{
+                          fontFamily: 'Inter, sans-serif',
+                          fontSize: '15px',
                           fontWeight: 500,
                           color: '#000000',
                         }}>
-                          34.063056,74.834444
+                          {selectedGaugeForecast
+                            ? `${selectedGaugeForecast.lat}, ${selectedGaugeForecast.lon}`
+                            : '—'}
                         </p>
                       </div>
                     </div>
@@ -1049,13 +1132,16 @@ const Maps = () => {
                         }}>
                           Station Name
                         </p>
-                        <p style={{ 
-                          fontFamily: 'Inter, sans-serif', 
-                          fontSize: '15px', 
+                        <p style={{
+                          fontFamily: 'Inter, sans-serif',
+                          fontSize: '15px',
                           fontWeight: 500,
                           color: '#000000',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          maxWidth: '100%',
                         }}>
-                          Chenab River Station
+                          {selectedGaugeForecast?.name ?? selectedGauge?.name ?? '—'}
                         </p>
                       </div>
 
@@ -1075,13 +1161,13 @@ const Maps = () => {
                             }}>
                               Basin size (km²)
                             </p>
-                            <p style={{ 
-                              fontFamily: 'Inter, sans-serif', 
-                              fontSize: '15px', 
+                            <p style={{
+                              fontFamily: 'Inter, sans-serif',
+                              fontSize: '15px',
                               fontWeight: 500,
                               color: '#000000',
                             }}>
-                              934.6
+                              {selectedGaugeForecast?.basin_size ?? '—'}
                             </p>
                           </div>
                           <label className="relative inline-block" style={{ width: '48px', height: '24px', marginTop: '8px' }}>

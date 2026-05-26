@@ -35,3 +35,13 @@ lerna-debug.log*
 
 # Local files
 *.local
+# ML Pipeline
+ml/venv/
+ml/__pycache__/
+ml/*.pyc
+ml/scheduler.log
+ml/models/*.pt
+ml/models/*.pkl
+ml/outputs/
+ml/data/discharge/
+ml/data/rainfall/

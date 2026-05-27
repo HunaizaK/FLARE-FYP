@@ -1,13 +1,16 @@
+from typing import Optional
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from auth_utils import decode_token
 from database import get_db
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> dict:
     """Extract and validate JWT from Authorization header. Returns {user_id, role}."""
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=403, detail="Not authenticated")
     token = credentials.credentials
     payload = decode_token(token)
     if not payload:

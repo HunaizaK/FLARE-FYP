@@ -4,6 +4,7 @@ import {
   Tooltip, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { initFloodOverlay } from '../flood-overlay';
 
 const FlyToHandler = ({ target }) => {
   const map = useMap();
@@ -12,6 +13,28 @@ const FlyToHandler = ({ target }) => {
   }, [target, map]);
   return null;
 };
+
+function FloodOverlayLayer({ enabled, apiBase = "http://localhost:8002" }) {
+  const map = useMap();
+  const ctrlRef = useRef(null);
+
+  useEffect(() => {
+    ctrlRef.current = initFloodOverlay(map, { apiBase });
+  }, []);
+
+  useEffect(() => {
+    if (!ctrlRef.current) return;
+    ctrlRef.current.ready.then(() => {
+      if (enabled) {
+        ctrlRef.current.show();
+      } else {
+        ctrlRef.current.hide();
+      }
+    });
+  }, [enabled]);
+
+  return null;
+}
 import { useDispatch, useSelector } from 'react-redux';
 import L from 'leaflet';
 import LayersOutlined from "@mui/icons-material/LayersOutlined";
@@ -699,6 +722,7 @@ const Maps = () => {
             style={{ width: '100%', height: '100%' }}
           >
             <FlyToHandler target={flyTarget} />
+            <FloodOverlayLayer enabled={layers.inundationProbability} apiBase="http://localhost:8002" />
             <TileLayer
               url={mapType === 'satellite'
                 ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'

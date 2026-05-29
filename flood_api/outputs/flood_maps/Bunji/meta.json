@@ -1,0 +1,72 @@
+{
+  "gauge": "Bunji",
+  "station": "BUNJI",
+  "river": "INDUS",
+  "lat": 35.664722,
+  "lon": 74.628333,
+  "status": "warning",
+  "max_train_Q": 7803.0,
+  "leaflet_bounds": [
+    [
+      35.637869608146964,
+      74.60540459448107
+    ],
+    [
+      35.691286214860035,
+      74.64774768114482
+    ]
+  ],
+  "peak": {
+    "day": 3,
+    "date": "2022-08-13",
+    "discharge_m3s": 5708.2,
+    "extrapolated": false,
+    "pixels_low_conf": 39776,
+    "pixels_high_conf": 10003,
+    "png_path": "flood_maps/Bunji/peak.png"
+  },
+  "all_days": [
+    {
+      "day": 1,
+      "date": "2022-08-11",
+      "discharge_m3s": 5573.4,
+      "is_peak": false
+    },
+    {
+      "day": 2,
+      "date": "2022-08-12",
+      "discharge_m3s": 5690.9,
+      "is_peak": false
+    },
+    {
+      "day": 3,
+      "date": "2022-08-13",
+      "discharge_m3s": 5708.2,
+      "is_peak": true
+    },
+    {
+      "day": 4,
+      "date": "2022-08-14",
+      "discharge_m3s": 5572.2,
+      "is_peak": false
+    },
+    {
+      "day": 5,
+      "date": "2022-08-15",
+      "discharge_m3s": 5388.4,
+      "is_peak": false
+    },
+    {
+      "day": 6,
+      "date": "2022-08-16",
+      "discharge_m3s": 5156.5,
+      "is_peak": false
+    },
+    {
+      "day": 7,
+      "date": "2022-08-17",
+      "discharge_m3s": 4889.0,
+      "is_peak": false
+    }
+  ]
+}

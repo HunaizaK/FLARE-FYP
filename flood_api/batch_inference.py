@@ -15,8 +15,8 @@ LSTM_FORECAST_DIR = Path(os.environ.get(
     BASE_DIR.parent / "backend" / "outputs" / "forecasts",
 ))
 
-COLOR_LOW_CONF  = (100, 180, 255, 255)
-COLOR_HIGH_CONF = ( 20,  80, 200, 255)
+COLOR_LOW_CONF  = (100, 180, 255, 140)
+COLOR_HIGH_CONF = ( 20,  80, 200, 220)
 
 
 def compute_leaflet_bounds(model):

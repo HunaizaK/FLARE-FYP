@@ -1,0 +1,72 @@
+{
+  "gauge": "Talhata_Bridge",
+  "station": "TALHATA",
+  "river": "KUNHAR",
+  "lat": 34.472222,
+  "lon": 73.341667,
+  "status": "normal",
+  "max_train_Q": 229.6999969482422,
+  "leaflet_bounds": [
+    [
+      34.436473894936135,
+      73.48920831280547
+    ],
+    [
+      34.46295422500453,
+      73.55473953168178
+    ]
+  ],
+  "peak": {
+    "day": 1,
+    "date": "2022-08-11",
+    "discharge_m3s": 76.9,
+    "extrapolated": false,
+    "pixels_low_conf": 5783,
+    "pixels_high_conf": 2470,
+    "png_path": "flood_maps/Talhata_Bridge/peak.png"
+  },
+  "all_days": [
+    {
+      "day": 1,
+      "date": "2022-08-11",
+      "discharge_m3s": 76.9,
+      "is_peak": true
+    },
+    {
+      "day": 2,
+      "date": "2022-08-12",
+      "discharge_m3s": 75.9,
+      "is_peak": false
+    },
+    {
+      "day": 3,
+      "date": "2022-08-13",
+      "discharge_m3s": 74.0,
+      "is_peak": false
+    },
+    {
+      "day": 4,
+      "date": "2022-08-14",
+      "discharge_m3s": 72.3,
+      "is_peak": false
+    },
+    {
+      "day": 5,
+      "date": "2022-08-15",
+      "discharge_m3s": 70.8,
+      "is_peak": false
+    },
+    {
+      "day": 6,
+      "date": "2022-08-16",
+      "discharge_m3s": 69.4,
+      "is_peak": false
+    },
+    {
+      "day": 7,
+      "date": "2022-08-17",
+      "discharge_m3s": 68.2,
+      "is_peak": false
+    }
+  ]
+}

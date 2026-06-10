@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import api from '../../services/api';
 
 const SignUpForm = () => {
   const navigate = useNavigate();
@@ -11,20 +12,22 @@ const SignUpForm = () => {
 
   const [formData, setFormData] = useState({
     email: '',
-    contactNo: '',
-    userName: '',
+    contact_no: '',
+    username: '',
     password: '',
     confirmPassword: '',
   });
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword]             = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading]                   = useState(false);
+  const [signupError, setSignupError]               = useState('');
 
   // Validation errors
   const [errors, setErrors] = useState({
     email: '',
-    contactNo: '',
-    userName: '',
+    contact_no: '',
+    username: '',
     password: '',
     confirmPassword: '',
   });
@@ -80,8 +83,8 @@ const SignUpForm = () => {
   };
 
   // Check if all fields are filled and valid
-  const isFormComplete = formData.email && formData.contactNo && formData.userName && formData.password && formData.confirmPassword &&
-    !errors.email && !errors.contactNo && !errors.password && !errors.confirmPassword;
+  const isFormComplete = formData.email && formData.contact_no && formData.username && formData.password && formData.confirmPassword &&
+    !errors.email && !errors.contact_no && !errors.password && !errors.confirmPassword;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,7 +99,7 @@ const SignUpForm = () => {
       case 'email':
         error = validateEmail(value);
         break;
-      case 'contactNo':
+      case 'contact_no':
         error = validateContactNo(value);
         break;
       case 'password':
@@ -122,30 +125,32 @@ const SignUpForm = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Persist account so Login can look up the role later
-    const accounts = JSON.parse(localStorage.getItem('flare_accounts') || '[]');
-    const alreadyExists = accounts.some((a) => a.userName === formData.userName);
-    if (!alreadyExists) {
-      accounts.push({
-        userName: formData.userName,
-        email: formData.email,
-        contactNo: formData.contactNo,
-        password: formData.password,
+    setIsLoading(true);
+    setSignupError('');
+    try {
+      await api.post('/auth/signup', {
+        email:      formData.email,
+        contact_no: formData.contact_no,
+        username:   formData.username,
+        password:   formData.password,
         role,
-        approved: role === 'organization' ? false : true,
-        submittedAt: new Date().toISOString().split('T')[0],
       });
-      localStorage.setItem('flare_accounts', JSON.stringify(accounts));
-    }
-
-    // Redirect based on account type
-    if (role === 'organization') {
-      navigate('/approval');
-    } else {
-      navigate('/login');
+      if (role === 'organization') {
+        navigate('/approval');
+      } else {
+        navigate('/login');
+      }
+    } catch (err) {
+      const detail = err.response?.data?.detail || 'Signup failed. Please try again.';
+      if (detail === 'Username or email already exists') {
+        setSignupError('This username or email is already registered.');
+      } else {
+        setSignupError(detail);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -311,8 +316,8 @@ const SignUpForm = () => {
                 </label>
                 <input
                   type="tel"
-                  name="contactNo"
-                  value={formData.contactNo}
+                  name="contact_no"
+                  value={formData.contact_no}
                   onChange={handleChange}
                   placeholder="+92 333 3333333"
                   className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
@@ -327,9 +332,9 @@ const SignUpForm = () => {
                   }}
                   required
                 />
-                {errors.contactNo && (
+                {errors.contact_no && (
                   <p style={{ color: '#EF4444', fontSize: '13px', marginTop: '4px', fontFamily: 'Inter, sans-serif' }}>
-                    {errors.contactNo}
+                    {errors.contact_no}
                   </p>
                 )}
               </div>
@@ -350,8 +355,8 @@ const SignUpForm = () => {
                 </label>
                 <input
                   type="text"
-                  name="userName"
-                  value={formData.userName}
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
                   placeholder="Enter your username"
                   className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
@@ -494,11 +499,18 @@ const SignUpForm = () => {
                 )}
               </div>
 
+              {/* API Error */}
+              {signupError && (
+                <p style={{ color: '#EF4444', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
+                  {signupError}
+                </p>
+              )}
+
               {/* Sign Up Button */}
               <button
                 type="submit"
-                disabled={!isFormComplete}
-                className={`w-full font-medium transition-colors duration-200 ${isFormComplete
+                disabled={!isFormComplete || isLoading}
+                className={`w-full font-medium transition-colors duration-200 ${isFormComplete && !isLoading
                   ? 'bg-[#b7c9dc] hover:bg-[#8f9dad] text-black'
                   : 'bg-[#9CA3AF] cursor-not-allowed text-black'
                   }`}
@@ -513,7 +525,7 @@ const SignUpForm = () => {
                   boxSizing: 'border-box',
                 }}
               >
-                Sign Up
+                {isLoading ? 'Creating account…' : 'Sign Up'}
               </button>
             </form>
 

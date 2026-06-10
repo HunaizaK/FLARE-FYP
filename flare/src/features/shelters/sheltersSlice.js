@@ -32,9 +32,9 @@ export const sheltersSlice = createSlice({
       save('flare_pending_shelters', state.pendingAddShelters);
     },
     editShelter: (state, action) => {
-      const { id, name, phone } = action.payload;
+      const { id, shelter_name, capacity } = action.payload;
       const s = state.shelters.find((s) => s.id === id);
-      if (s) { s.name = name; s.phone = phone; save('flare_approved_shelters', state.shelters); }
+      if (s) { s.shelter_name = shelter_name; s.capacity = capacity; save('flare_approved_shelters', state.shelters); }
     },
     requestDeleteShelter: (state, action) => {
       state.pendingDeleteShelters.push(action.payload);
@@ -62,7 +62,7 @@ export const sheltersSlice = createSlice({
       const edit = state.pendingEditShelters.find((s) => s.id === action.payload);
       if (edit) {
         const shelter = state.shelters.find((s) => s.id === edit.shelterId);
-        if (shelter) { shelter.name = edit.name; shelter.phone = edit.phone; }
+        if (shelter) { shelter.shelter_name = edit.shelter_name; shelter.capacity = edit.capacity; }
         save('flare_approved_shelters', state.shelters);
       }
       state.pendingEditShelters = state.pendingEditShelters.filter((s) => s.id !== action.payload);

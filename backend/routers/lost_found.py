@@ -19,11 +19,22 @@ def get_posts(current_user: dict = Depends(require_approved_user)):
     try:
         if current_user["role"] == "admin":
             cursor.execute(
-                "SELECT * FROM lost_found_posts ORDER BY created_at DESC"
+                """
+                SELECT p.*, u.username, u.contact_no, u.created_at AS user_created_at
+                FROM lost_found_posts p
+                LEFT JOIN app_users u ON u.id = p.user_id
+                ORDER BY p.created_at DESC
+                """
             )
         else:
             cursor.execute(
-                "SELECT * FROM lost_found_posts WHERE approval_status = 'approved' ORDER BY created_at DESC"
+                """
+                SELECT p.*, u.username, u.contact_no, u.created_at AS user_created_at
+                FROM lost_found_posts p
+                LEFT JOIN app_users u ON u.id = p.user_id
+                WHERE p.approval_status = 'approved'
+                ORDER BY p.created_at DESC
+                """
             )
         posts = cursor.fetchall()
         return {"success": True, "message": "Posts retrieved successfully", "data": list(posts)}

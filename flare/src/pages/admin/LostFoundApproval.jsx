@@ -1,26 +1,22 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import {
   SearchOutlined, CheckOutlined, CloseOutlined,
   KeyboardArrowUpOutlined, KeyboardArrowDownOutlined,
-  UnfoldMoreOutlined, ArrowBackOutlined,
+  UnfoldMoreOutlined, ArrowBackOutlined, RefreshOutlined,
 } from '@mui/icons-material';
-
-const load = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
-const save = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+import api from '../../services/api';
 
 const COLUMNS = [
   { key: 'category',    label: 'Type' },
+  { key: 'post_type',   label: 'Post Type' },
   { key: 'reportedBy',  label: 'Reported By' },
   { key: 'memberSince', label: 'Member Since' },
   { key: 'phone',       label: 'Phone Number' },
-  { key: 'isUrgent',    label: 'Urgent' },
 ];
 
-const COLUMNS_NO_URGENT = COLUMNS.filter((c) => c.key !== 'isUrgent');
-
-const LFTable = ({ title, rows, onAccept, onReject, columns = COLUMNS }) => {
+const LFTable = ({ title, rows, onAccept, onReject }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField]     = useState('reportedBy');
   const [sortDir, setSortDir]         = useState('asc');
@@ -45,8 +41,8 @@ const LFTable = ({ title, rows, onAccept, onReject, columns = COLUMNS }) => {
              (r.category   ?? '').toLowerCase().includes(q)
     );
     return [...f].sort((a, b) => {
-      const av = sortField === 'isUrgent' ? (a.isUrgent ? 1 : 0) : (a[sortField] ?? '');
-      const bv = sortField === 'isUrgent' ? (b.isUrgent ? 1 : 0) : (b[sortField] ?? '');
+      const av = a[sortField] ?? '';
+      const bv = b[sortField] ?? '';
       const cmp = av < bv ? -1 : av > bv ? 1 : 0;
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -68,7 +64,7 @@ const LFTable = ({ title, rows, onAccept, onReject, columns = COLUMNS }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
           <thead>
             <tr style={{ backgroundColor: '#f5f8fb', borderBottom: '1px solid #E5E7EB' }}>
-              {columns.map((col) => (
+              {COLUMNS.map((col) => (
                 <th key={col.key} onClick={() => handleSort(col.key)} style={{ padding: '14px 20px', textAlign: 'left', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#6B7280', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{col.label}<SortIcon field={col.key} /></div>
                 </th>
@@ -78,16 +74,14 @@ const LFTable = ({ title, rows, onAccept, onReject, columns = COLUMNS }) => {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={columns.length + 1} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No pending requests'}</td></tr>
+              <tr><td colSpan={COLUMNS.length + 1} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No pending requests'}</td></tr>
             ) : filtered.map((row, index) => (
-              <tr key={row.id} style={{ borderBottom: index < filtered.length - 1 ? '1px solid #F3F4F6' : 'none', backgroundColor: row.isUrgent ? '#FEF2F2' : 'transparent', transition: 'background-color 0.15s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = row.isUrgent ? '#FEE2E2' : '#fafbfc')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = row.isUrgent ? '#FEF2F2' : 'transparent')}>
+              <tr key={row.id} style={{ borderBottom: index < filtered.length - 1 ? '1px solid #F3F4F6' : 'none', transition: 'background-color 0.15s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fafbfc')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.category}</td>
+                <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937', textTransform: 'capitalize' }}>{row.post_type}</td>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.reportedBy}</td>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', whiteSpace: 'nowrap' }}>{row.memberSince}</td>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937', whiteSpace: 'nowrap' }}>{row.phone}</td>
-                {columns.some((c) => c.key === 'isUrgent') && (
-                  <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, color: row.isUrgent ? '#DC2626' : '#6B7280' }}>{row.isUrgent ? 'Yes' : 'No'}</td>
-                )}
                 <td style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button onClick={() => onAccept(row.id)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px', backgroundColor: '#b7c9dc', border: '2px solid #b7c9dc', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#8f9dad'; e.currentTarget.style.borderColor = '#8f9dad'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#b7c9dc'; e.currentTarget.style.borderColor = '#b7c9dc'; }}>
@@ -110,71 +104,51 @@ const LFTable = ({ title, rows, onAccept, onReject, columns = COLUMNS }) => {
   );
 };
 
+const mapRow = (r) => ({
+  id:          String(r.id),
+  category:    r.payload?.category  || '—',
+  post_type:   r.payload?.post_type || '—',
+  reportedBy:  r.username           || '—',
+  memberSince: r.created_at ? new Date(r.created_at).getFullYear().toString() : '—',
+  phone:       r.contact_no         || '—',
+});
+
 const LostFoundApproval = () => {
   const navigate = useNavigate();
-  const [addRequests,    setAddRequests]    = useState(() => load('flare_pending_lostfound'));
-  const [deleteRequests, setDeleteRequests] = useState(() => load('flare_pending_delete_lostfound'));
-  const [editRequests,   setEditRequests]   = useState(() => load('flare_pending_edit_lostfound'));
+  const [addRequests,    setAddRequests]    = useState([]);
+  const [deleteRequests, setDeleteRequests] = useState([]);
+  const [editRequests,   setEditRequests]   = useState([]);
 
-  useEffect(() => {
-    setAddRequests(load('flare_pending_lostfound'));
-    setDeleteRequests(load('flare_pending_delete_lostfound'));
-    setEditRequests(load('flare_pending_edit_lostfound'));
+  const loadRequests = useCallback(async () => {
+    try {
+      const res = await api.get('/change-requests?status=pending');
+      const lf  = res.data.data.filter((r) => r.table_name === 'lost_found_posts');
+      setAddRequests(lf.filter((r) => r.request_type === 'add').map(mapRow));
+      setDeleteRequests(lf.filter((r) => r.request_type === 'delete').map(mapRow));
+      setEditRequests(lf.filter((r) => r.request_type === 'edit').map(mapRow));
+    } catch (err) {
+      console.error('Failed to load change requests:', err);
+    }
   }, []);
 
-  // ── Add ──
-  const handleAddAccept = (id) => {
-    const pending  = load('flare_pending_lostfound');
-    const item     = pending.find((r) => r.id === id);
-    if (item) {
-      const approved = load('flare_approved_lostfound');
-      save('flare_approved_lostfound', [...approved, item]);
+  useEffect(() => { loadRequests(); }, [loadRequests]);
+
+  const handleAccept = async (id, setter) => {
+    try {
+      await api.put(`/change-requests/${id}/approve`);
+      setter((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to approve request.');
     }
-    save('flare_pending_lostfound', pending.filter((r) => r.id !== id));
-    setAddRequests((prev) => prev.filter((r) => r.id !== id));
-  };
-  const handleAddReject = (id) => {
-    const pending = load('flare_pending_lostfound');
-    save('flare_pending_lostfound', pending.filter((r) => r.id !== id));
-    setAddRequests((prev) => prev.filter((r) => r.id !== id));
   };
 
-  // ── Delete ──
-  const handleDeleteAccept = (id) => {
-    const pending = load('flare_pending_delete_lostfound');
-    const req     = pending.find((r) => r.id === id);
-    if (req) {
-      const approved = load('flare_approved_lostfound');
-      save('flare_approved_lostfound', approved.filter((a) => a.id !== req.originalId));
+  const handleReject = async (id, setter) => {
+    try {
+      await api.put(`/change-requests/${id}/reject`);
+      setter((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to reject request.');
     }
-    save('flare_pending_delete_lostfound', pending.filter((r) => r.id !== id));
-    setDeleteRequests((prev) => prev.filter((r) => r.id !== id));
-  };
-  const handleDeleteReject = (id) => {
-    const pending = load('flare_pending_delete_lostfound');
-    save('flare_pending_delete_lostfound', pending.filter((r) => r.id !== id));
-    setDeleteRequests((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  // ── Edit ──
-  const handleEditAccept = (id) => {
-    const pending = load('flare_pending_edit_lostfound');
-    const edit    = pending.find((r) => r.id === id);
-    if (edit) {
-      const approved = load('flare_approved_lostfound');
-      save('flare_approved_lostfound', approved.map((a) =>
-        a.id === edit.originalId
-          ? { ...a, category: edit.category, name: edit.name, location: edit.location, contactInfo: edit.contactInfo, additionalInfo: edit.additionalInfo, image: edit.image, isUrgent: edit.isUrgent }
-          : a
-      ));
-    }
-    save('flare_pending_edit_lostfound', pending.filter((r) => r.id !== id));
-    setEditRequests((prev) => prev.filter((r) => r.id !== id));
-  };
-  const handleEditReject = (id) => {
-    const pending = load('flare_pending_edit_lostfound');
-    save('flare_pending_edit_lostfound', pending.filter((r) => r.id !== id));
-    setEditRequests((prev) => prev.filter((r) => r.id !== id));
   };
 
   return (
@@ -185,16 +159,21 @@ const LostFoundApproval = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '36px' }}>
             <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 600, color: '#000000', margin: 0 }}>Lost & Found Approvals</h1>
-            <button onClick={() => navigate('/lost-found')} style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 24px', borderRadius: '12px', backgroundColor: '#b7c9dc', border: 'none', outline: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000', boxShadow: '0 0px 12px rgba(0,0,0,0.18)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8f9dad'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#b7c9dc'}>
-              <ArrowBackOutlined style={{ fontSize: '18px' }} /> Back
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={loadRequests} style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 20px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '2px solid #b7c9dc', outline: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000', boxShadow: '0 0px 12px rgba(0,0,0,0.10)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f5f9'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}>
+                <RefreshOutlined style={{ fontSize: '18px' }} /> Refresh
+              </button>
+              <button onClick={() => navigate('/lost-found')} style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 24px', borderRadius: '12px', backgroundColor: '#b7c9dc', border: 'none', outline: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000', boxShadow: '0 0px 12px rgba(0,0,0,0.18)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8f9dad'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#b7c9dc'}>
+                <ArrowBackOutlined style={{ fontSize: '18px' }} /> Back
+              </button>
+            </div>
           </div>
 
-          <LFTable title="Add Lost & Found Approval"    rows={addRequests}    onAccept={handleAddAccept}    onReject={handleAddReject} />
+          <LFTable title="Add Lost & Found Approval"    rows={addRequests}    onAccept={(id) => handleAccept(id, setAddRequests)}    onReject={(id) => handleReject(id, setAddRequests)} />
           <div style={{ height: '1px', backgroundColor: '#E5E7EB', marginBottom: '40px' }} />
-          <LFTable title="Delete Lost & Found Approval" rows={deleteRequests} onAccept={handleDeleteAccept} onReject={handleDeleteReject} columns={COLUMNS_NO_URGENT} />
+          <LFTable title="Delete Lost & Found Approval" rows={deleteRequests} onAccept={(id) => handleAccept(id, setDeleteRequests)} onReject={(id) => handleReject(id, setDeleteRequests)} />
           <div style={{ height: '1px', backgroundColor: '#E5E7EB', marginBottom: '40px' }} />
-          <LFTable title="Edit Lost & Found Approval"   rows={editRequests}   onAccept={handleEditAccept}   onReject={handleEditReject} />
+          <LFTable title="Edit Lost & Found Approval"   rows={editRequests}   onAccept={(id) => handleAccept(id, setEditRequests)}   onReject={(id) => handleReject(id, setEditRequests)} />
 
         </div>
       </div>

@@ -2,60 +2,54 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Navbar from '../../components/Navbar';
+import api from '../../services/api';
 
 const EditLostFound = () => {
-  const navigate    = useNavigate();
-  const { state }   = useLocation();
-  const item        = state?.item;
-  const currentUser = useSelector((s) => s.auth.user);
+  const navigate      = useNavigate();
+  const { state }     = useLocation();
+  const item          = state?.item;
+  const currentUserId = useSelector((s) => s.auth.userId);
 
   const [showApprovalPopup, setShowApprovalPopup]       = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [submitting, setSubmitting]                     = useState(false);
 
   const [formData, setFormData] = useState({
-    category:       item?.category       || '',
-    name:           item?.name           || '',
-    location:       item?.location       || '',
-    contactInfo:    item?.contactInfo    || '',
-    additionalInfo: item?.additionalInfo || '',
-    image:          item?.image          || null,
-    isUrgent:       item?.isUrgent       || false,
+    category:        item?.category        || '',
+    name:            item?.name            || '',
+    location:        item?.location        || '',
+    contact:         item?.contact         || '',
+    additional_info: item?.additional_info || '',
+    post_type:       item?.post_type       || '',
   });
 
-  if (!item || item.reportedBy !== currentUser) {
+  if (!item || item.user_id !== currentUserId) {
     navigate('/lost-found');
     return null;
   }
 
   const handleFormChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setFormData((prev) => ({ ...prev, image: reader.result }));
-      reader.readAsDataURL(file);
-    }
-  };
+  const isFormValid = formData.post_type && formData.category && formData.name && formData.location && formData.contact;
 
-  const isFormValid = formData.category && formData.name && formData.location && formData.contactInfo;
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isFormValid) return;
-    const accounts = JSON.parse(localStorage.getItem('flare_accounts') || '[]');
-    const account  = accounts.find((a) => a.userName === currentUser);
-    const pending  = JSON.parse(localStorage.getItem('flare_pending_edit_lostfound') || '[]');
-    pending.push({
-      id:          Date.now().toString(),
-      originalId:  item.id,
-      ...formData,
-      reportedBy:  currentUser,
-      memberSince: account?.submittedAt || '—',
-      phone:       account?.contactNo   || formData.contactInfo,
-      submittedAt: new Date().toISOString().split('T')[0],
-    });
-    localStorage.setItem('flare_pending_edit_lostfound', JSON.stringify(pending));
-    setShowApprovalPopup(true);
+    setSubmitting(true);
+    try {
+      await api.put(`/lost-found/request/${item.id}`, {
+        category:        formData.category,
+        name:            formData.name,
+        location:        formData.location,
+        contact:         formData.contact,
+        additional_info: formData.additional_info,
+        post_type:       formData.post_type,
+      });
+      setShowApprovalPopup(true);
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to submit edit request.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -74,6 +68,23 @@ const EditLostFound = () => {
 
         <div style={{ padding: '40px 80px', maxWidth: '800px' }}>
           <div className="flex flex-col" style={{ gap: '24px' }}>
+
+            {/* Post Type */}
+            <div>
+              <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Post Type *</label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {['lost', 'found'].map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => handleFormChange('post_type', type)}
+                    style={{ flex: 1, height: '48px', borderRadius: '20px', border: `2px solid ${formData.post_type === type ? (type === 'lost' ? '#7C3AED' : '#059669') : '#D1D5DB'}`, backgroundColor: formData.post_type === type ? (type === 'lost' ? '#7C3AED' : '#059669') : '#FFFFFF', color: formData.post_type === type ? '#FFFFFF' : '#6B7280', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s' }}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Category Dropdown */}
             <div style={{ position: 'relative' }}>
@@ -94,10 +105,10 @@ const EditLostFound = () => {
             </div>
 
             {[
-              { label: 'Name *',                   field: 'name',           placeholder: 'Enter name' },
-              { label: 'Location *',               field: 'location',       placeholder: 'Qasim Bagh, Multan' },
-              { label: 'Contact Info *',           field: 'contactInfo',    placeholder: '+92 333 3333333' },
-              { label: 'Additional Info (if any)', field: 'additionalInfo', placeholder: 'Wearing blue shirt' },
+              { label: 'Name *',                   field: 'name',            placeholder: 'Enter name' },
+              { label: 'Location *',               field: 'location',        placeholder: 'Qasim Bagh, Multan' },
+              { label: 'Contact *',                field: 'contact',         placeholder: '+92 333 3333333' },
+              { label: 'Additional Info (if any)', field: 'additional_info', placeholder: 'Wearing blue shirt' },
             ].map(({ label, field, placeholder }) => (
               <div key={field}>
                 <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>{label}</label>
@@ -105,25 +116,13 @@ const EditLostFound = () => {
               </div>
             ))}
 
-            <div>
-              <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Upload Picture (if any)</label>
-              {formData.image && <img src={formData.image} alt="current" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px' }} />}
-              <input type="file" accept="image/*" onChange={handleImageUpload} style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px' }} />
-            </div>
-
-            <div className="flex items-center" style={{ gap: '8px' }}>
-              <input type="checkbox" id="urgent" checked={formData.isUrgent} onChange={(e) => handleFormChange('isUrgent', e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-              <label htmlFor="urgent" style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#000000', cursor: 'pointer' }}>Mark as urgent</label>
-            </div>
-
-            <button onClick={handleSubmit} disabled={!isFormValid} className={`font-medium transition-colors duration-200 ${isFormValid ? 'bg-[#b7c9dc] hover:bg-[#8f9dad] text-black' : 'bg-[#9CA3AF] text-black cursor-not-allowed'}`} style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', width: '100%', height: '52px', borderRadius: '16px', border: 'none', outline: 'none', cursor: isFormValid ? 'pointer' : 'not-allowed', marginTop: '16px' }}>
-              Edit
+            <button onClick={handleSubmit} disabled={!isFormValid || submitting} className={`font-medium transition-colors duration-200 ${isFormValid && !submitting ? 'bg-[#b7c9dc] hover:bg-[#8f9dad] text-black' : 'bg-[#9CA3AF] text-black cursor-not-allowed'}`} style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', width: '100%', height: '52px', borderRadius: '16px', border: 'none', outline: 'none', cursor: isFormValid && !submitting ? 'pointer' : 'not-allowed', marginTop: '16px' }}>
+              {submitting ? 'Submitting…' : 'Edit'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Approval Popup */}
       {showApprovalPopup && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, paddingTop: '220px' }}>
           <div style={{ position: 'relative', backgroundColor: '#ffffff', borderRadius: '16px', padding: '32px', maxWidth: '450px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', paddingTop: '80px' }}>

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routers.auth import router as auth_router
 from routers.organizations import router as org_router
 from routers.shelters import router as shelters_router
@@ -9,6 +10,14 @@ from database import get_db
 from auth_utils import hash_password
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def ensure_admin_exists():

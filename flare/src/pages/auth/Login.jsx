@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setUser, setAccountType } from '../../features/auth/authSlice';
+import { setUser, setAccountType, setToken, setUserId } from '../../features/auth/authSlice';
 import { AiOutlineUser, AiOutlineLock, AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import api from '../../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
-    userName: '',
+    username: '',
     password: '',
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [loginError, setLoginError]     = useState('');
+  const [isLoading, setIsLoading]       = useState(false);
 
   // Check if all fields are filled
-  const isFormComplete = formData.userName && formData.password;
+  const isFormComplete = formData.username && formData.password;
 
   const handleChange = (e) => {
     setFormData({
@@ -28,28 +30,35 @@ const Login = () => {
     if (loginError) setLoginError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const accounts = JSON.parse(localStorage.getItem('flare_accounts') || '[]');
-    const account = accounts.find(
-      (a) => a.userName === formData.userName && a.password === formData.password
-    );
-
-    if (!account) {
-      setLoginError('Invalid username or password.');
-      return;
+    setIsLoading(true);
+    setLoginError('');
+    try {
+      const res = await api.post('/auth/login', {
+        username: formData.username,
+        password: formData.password,
+      });
+      const { access_token, username, role, user_id } = res.data;
+      localStorage.setItem('flare_token',   access_token);
+      localStorage.setItem('flare_user',    username);
+      localStorage.setItem('flare_role',    role);
+      localStorage.setItem('flare_user_id', user_id);
+      dispatch(setUser(username));
+      dispatch(setAccountType(role));
+      dispatch(setToken(access_token));
+      dispatch(setUserId(user_id));
+      navigate('/maps');
+    } catch (err) {
+      const detail = err.response?.data?.detail || '';
+      if (detail === 'Organization not approved yet') {
+        setLoginError('Your account is pending admin approval. Please wait for approval before logging in.');
+      } else {
+        setLoginError('Invalid username or password.');
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    if (account.approved === false) {
-      setLoginError('Your account is pending admin approval. Please wait for approval before logging in.');
-      return;
-    }
-
-    dispatch(setUser(account.userName));
-    dispatch(setAccountType(account.role));
-
-    navigate('/maps');
   };
 
   const handleForgotPassword = () => {
@@ -184,8 +193,8 @@ const Login = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    name="userName"
-                    value={formData.userName}
+                    name="username"
+                    value={formData.username}
                     onChange={handleChange}
                     placeholder="Enter your name"
                     className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
@@ -284,8 +293,8 @@ const Login = () => {
               {/* Login Button */}
               <button
                 type="submit"
-                disabled={!isFormComplete}
-                className={`w-full font-medium transition-colors duration-200 ${isFormComplete
+                disabled={!isFormComplete || isLoading}
+                className={`w-full font-medium transition-colors duration-200 ${isFormComplete && !isLoading
                   ? 'bg-[#b7c9dc] hover:bg-[#8f9dad] text-black'
                   : 'bg-[#9CA3AF] cursor-not-allowed text-black'
                   }`}
@@ -299,7 +308,7 @@ const Login = () => {
                   marginTop: '8px',
                   boxSizing: 'border-box',
                 }} >
-                Login
+                {isLoading ? 'Logging in…' : 'Login'}
               </button>
             </form>
 

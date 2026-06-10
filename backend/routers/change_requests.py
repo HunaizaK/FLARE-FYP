@@ -26,11 +26,24 @@ def get_all_change_requests(
     try:
         if status:
             cursor.execute(
-                "SELECT * FROM change_requests WHERE status = %s ORDER BY created_at DESC",
+                """
+                SELECT cr.*, u.username, u.contact_no
+                FROM change_requests cr
+                LEFT JOIN app_users u ON u.id = cr.requested_by
+                WHERE cr.status = %s
+                ORDER BY cr.created_at DESC
+                """,
                 (status,)
             )
         else:
-            cursor.execute("SELECT * FROM change_requests ORDER BY created_at DESC")
+            cursor.execute(
+                """
+                SELECT cr.*, u.username, u.contact_no
+                FROM change_requests cr
+                LEFT JOIN app_users u ON u.id = cr.requested_by
+                ORDER BY cr.created_at DESC
+                """
+            )
         requests = cursor.fetchall()
         return {"success": True, "message": "Change requests retrieved", "data": list(requests)}
     except HTTPException:

@@ -6,6 +6,7 @@ from routers.shelters import router as shelters_router
 from routers.lost_found import router as lf_router
 from routers.donation_accounts import router as donation_accounts_router
 from routers.change_requests import router as change_requests_router
+from routers.users import router as users_router
 from database import get_db
 from auth_utils import hash_password
 
@@ -59,6 +60,7 @@ app.include_router(shelters_router)
 app.include_router(lf_router)
 app.include_router(donation_accounts_router)
 app.include_router(change_requests_router)
+app.include_router(users_router)
 
 
 @app.get("/")

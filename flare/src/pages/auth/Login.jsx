@@ -40,10 +40,10 @@ const Login = () => {
         password: formData.password,
       });
       const { access_token, username, role, user_id } = res.data;
-      localStorage.setItem('flare_token',   access_token);
-      localStorage.setItem('flare_user',    username);
-      localStorage.setItem('flare_role',    role);
-      localStorage.setItem('flare_user_id', user_id);
+      sessionStorage.setItem('flare_token',   access_token);
+      sessionStorage.setItem('flare_user',    username);
+      sessionStorage.setItem('flare_role',    role);
+      sessionStorage.setItem('flare_user_id', user_id);
       dispatch(setUser(username));
       dispatch(setAccountType(role));
       dispatch(setToken(access_token));

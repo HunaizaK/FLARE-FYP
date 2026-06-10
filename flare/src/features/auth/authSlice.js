@@ -3,10 +3,10 @@ import { createSlice } from '@reduxjs/toolkit';
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user:        localStorage.getItem('flare_user')    || null,
-    accountType: localStorage.getItem('flare_role')    || null,
-    token:       localStorage.getItem('flare_token')   || null,
-    userId:      localStorage.getItem('flare_user_id') || null,
+    user:        sessionStorage.getItem('flare_user')    || null,
+    accountType: sessionStorage.getItem('flare_role')    || null,
+    token:       sessionStorage.getItem('flare_token')   || null,
+    userId:      sessionStorage.getItem('flare_user_id') || null,
   },
   reducers: {
     setUser: (state, action) => {
@@ -26,10 +26,10 @@ const authSlice = createSlice({
       state.accountType = null;
       state.token       = null;
       state.userId      = null;
-      localStorage.removeItem('flare_token');
-      localStorage.removeItem('flare_user');
-      localStorage.removeItem('flare_role');
-      localStorage.removeItem('flare_user_id');
+      sessionStorage.removeItem('flare_token');
+      sessionStorage.removeItem('flare_user');
+      sessionStorage.removeItem('flare_role');
+      sessionStorage.removeItem('flare_user_id');
     },
   },
 });

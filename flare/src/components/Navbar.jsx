@@ -9,6 +9,7 @@ import {
   VolunteerActivismOutlined,
   SettingsOutlined,
   HowToRegOutlined,
+  AssignmentOutlined,
 } from '@mui/icons-material';
 
 const Navbar = () => {
@@ -17,22 +18,24 @@ const Navbar = () => {
   const location = useLocation();
   const accountType = useSelector((state) => state.auth.accountType);
 
-  // Organization menu items (6 items + logout)
+  // Organization menu items
   const organizationMenuItems = [
     { icon: <MapOutlined />, label: 'Maps', path: '/maps' },
     { icon: <CottageOutlined />, label: 'Shelter Management', path: '/shelter-management' },
     { icon: <AssessmentOutlined />, label: 'Reports', path: '/reports' },
     { icon: <LuggageOutlined />, label: 'Lost & Found', path: '/lost-found' },
     { icon: <VolunteerActivismOutlined />, label: 'Donation', path: '/donation' },
+    { icon: <AssignmentOutlined />, label: 'My Requests', path: '/my-requests' },
     { icon: <SettingsOutlined />, label: 'Settings', path: '/settings' },
   ];
 
-  // Citizen menu items (5 items - NO Shelter Management)
+  // Citizen menu items
   const citizenMenuItems = [
     { icon: <MapOutlined />, label: 'Maps', path: '/maps' },
     { icon: <AssessmentOutlined />, label: 'Reports', path: '/reports' },
     { icon: <LuggageOutlined />, label: 'Lost & Found', path: '/lost-found' },
     { icon: <VolunteerActivismOutlined />, label: 'Donation', path: '/donation' },
+    { icon: <AssignmentOutlined />, label: 'My Requests', path: '/my-requests' },
     { icon: <SettingsOutlined />, label: 'Settings', path: '/settings' },
   ];
 

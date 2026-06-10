@@ -17,6 +17,7 @@ import LostFoundApproval from '../pages/admin/LostFoundApproval';
 import ShelterList from '../pages/admin/ShelterList';
 import UserList from '../pages/admin/UserList';
 import EditLostFound from '../pages/stubs/EditLostFound';
+import MyRequests from '../pages/stubs/MyRequests';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const ALL_ROLES = ['admin', 'organization', 'citizen'];
@@ -58,6 +59,13 @@ const AppRoutes = () => {
         <Route path="/settings" element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
             <Settings />
+          </ProtectedRoute>
+        } />
+
+        {/* Organization + Citizen */}
+        <Route path="/my-requests" element={
+          <ProtectedRoute allowedRoles={['organization', 'citizen']}>
+            <MyRequests />
           </ProtectedRoute>
         } />
 

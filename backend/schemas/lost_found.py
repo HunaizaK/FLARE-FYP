@@ -7,7 +7,6 @@ class LostFoundCreate(BaseModel):
     location: str
     contact: str
     name: str
-    post_type: str
     additional_info: Optional[str] = None
 
 
@@ -16,5 +15,4 @@ class LostFoundUpdate(BaseModel):
     location: Optional[str] = None
     contact: Optional[str] = None
     name: Optional[str] = None
-    post_type: Optional[str] = None
     additional_info: Optional[str] = None

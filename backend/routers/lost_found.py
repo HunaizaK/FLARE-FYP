@@ -55,6 +55,7 @@ def submit_add_request(data: LostFoundCreate, current_user: dict = Depends(requi
     cursor = conn.cursor()
     try:
         payload = data.dict()
+        payload["post_type"] = "lost"
         payload["user_id"] = current_user["user_id"]
 
         cursor.execute(
@@ -116,6 +117,7 @@ def submit_edit_request(
             raise HTTPException(status_code=409, detail="A pending request already exists for this post")
 
         payload = data.dict()
+        payload["post_type"] = "lost"
         cursor.execute(
             """
             INSERT INTO change_requests

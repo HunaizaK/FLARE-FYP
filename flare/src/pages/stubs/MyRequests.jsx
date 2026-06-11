@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import Navbar from '../../components/Navbar';
 import {
-  SearchOutlined, CloseOutlined, RefreshOutlined,
+  SearchOutlined, CloseOutlined,
   KeyboardArrowUpOutlined, KeyboardArrowDownOutlined,
   UnfoldMoreOutlined,
 } from '@mui/icons-material';
@@ -88,9 +88,6 @@ const MyRequests = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '36px' }}>
             <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 600, color: '#000000', margin: 0 }}>My Requests</h1>
-            <button onClick={loadRequests} style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 20px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '2px solid #b7c9dc', outline: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000', boxShadow: '0 0px 12px rgba(0,0,0,0.10)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f5f9'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}>
-              <RefreshOutlined style={{ fontSize: '18px' }} /> Refresh
-            </button>
           </div>
 
           <div style={{ maxWidth: '560px', marginBottom: '20px' }}>

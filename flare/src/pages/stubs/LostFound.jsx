@@ -8,6 +8,15 @@ import {
 } from '@mui/icons-material';
 import api from '../../services/api';
 
+const getImageSrc = (b64) => {
+  if (!b64) return null;
+  if (b64.startsWith('data:')) return b64;
+  if (b64.startsWith('/9j/'))   return `data:image/jpeg;base64,${b64}`;
+  if (b64.startsWith('iVBOR'))  return `data:image/png;base64,${b64}`;
+  if (b64.startsWith('UklGR'))  return `data:image/webp;base64,${b64}`;
+  return `data:image/jpeg;base64,${b64}`;
+};
+
 const CategoryBadge = ({ category }) => (
   <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: 600, color: '#FFFFFF', backgroundColor: category === 'Person' ? '#EF4444' : category === 'Pet' ? '#F59E0B' : '#3B82F6', padding: '4px 12px', borderRadius: '12px' }}>
     {category}
@@ -43,8 +52,10 @@ const LostFound = () => {
   const [deleteTarget, setDeleteTarget]           = useState(null);
 
   const [formData, setFormData] = useState({
-    category: '', name: '', location: '', contact: '', additional_info: '', post_type: '',
+    category: '', name: '', location: '', contact: '', additional_info: '', post_type: 'lost',
   });
+  const [imageFile, setImageFile]       = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   const fetchPosts = async () => {
     try {
@@ -56,7 +67,8 @@ const LostFound = () => {
         reportedBy:  p.username || '—',
         memberSince: p.user_created_at ? new Date(p.user_created_at).getFullYear().toString() : '—',
       }));
-      setLostItems(mapped);
+      const unique = Array.from(new Map(mapped.map((p) => [p.id, p])).values());
+      setLostItems(unique);
     } catch (err) {
       console.error('Failed to load posts:', err);
     } finally {
@@ -101,15 +113,22 @@ const LostFound = () => {
     if (!isFormValid) return;
     setSubmitting(true);
     try {
-      await api.post('/lost-found/request', {
-        category:        formData.category,
-        name:            formData.name,
-        location:        formData.location,
-        contact:         formData.contact,
-        additional_info: formData.additional_info,
-        post_type:       formData.post_type,
+      const data = new FormData();
+      data.append('category',        formData.category);
+      data.append('name',            formData.name);
+      data.append('location',        formData.location);
+      data.append('contact',         formData.contact);
+      data.append('additional_info', formData.additional_info);
+      data.append('post_type',       formData.post_type);
+      if (imageFile) data.append('image', imageFile);
+
+      await api.post('/lost-found/request', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       setFormData({ category: '', name: '', location: '', contact: '', additional_info: '', post_type: '' });
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImageFile(null);
+      setImagePreview('');
       setShowReportForm(false);
       setPendingAction(null);
       setShowApprovalPopup(true);
@@ -140,7 +159,7 @@ const LostFound = () => {
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#000000', marginBottom: '24px', textAlign: 'center', lineHeight: 1.5, paddingTop: '20px' }}>
           {pendingAction === 'delete'
             ? <>Your deletion request has been successfully submitted for review.<br />You will be notified once your request is approved.</>
-            : <>Your report has been successfully submitted for review.<br />You will be notified once your request is approved.</>}
+            : <>Your request has been successfully submitted for review.<br />You will be notified once your request is approved.</>}
         </p>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <button onClick={() => { setShowApprovalPopup(false); setPendingAction(null); }} style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer' }} onMouseEnter={(e) => { e.target.style.backgroundColor = '#8f9dad'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = '#b7c9dc'; }}>
@@ -202,7 +221,7 @@ const LostFound = () => {
               <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '50px', fontWeight: 600, color: '#000000', margin: 0 }}>Lost & Found</h1>
               {isAdmin ? <ApproveRequestsBtn /> : (
                 <button onClick={handleReportLost} className="bg-[#b7c9dc] hover:bg-[#8f9dad] text-black font-medium transition-colors duration-200" style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', width: '200px', height: '52px', borderRadius: '16px', border: 'none', outline: 'none', cursor: 'pointer' }}>
-                  Report Lost / Found
+                  Report Lost
                 </button>
               )}
             </div>
@@ -220,7 +239,7 @@ const LostFound = () => {
             {loading ? (
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF', marginTop: '60px' }}>Loading…</p>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px', maxWidth: '1400px', width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '20px', maxWidth: '1400px', width: '100%' }}>
                 {filteredItems.length === 0 ? (
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>No posts found.</p>
                 ) : filteredItems.map((item) => (
@@ -236,13 +255,14 @@ const LostFound = () => {
                         <ThreeDotsMenu item={item} isOpen={openMenuId === item.id} onToggle={() => setOpenMenuId(openMenuId === item.id ? null : item.id)} onClose={() => setOpenMenuId(null)} />
                       </div>
                     )}
-                    <div style={{ width: '100%', height: '200px', backgroundColor: '#E5E7EB', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <ImageOutlined style={{ fontSize: '64px', color: '#9CA3AF' }} />
+                    <div style={{ width: '100%', height: '260px', backgroundColor: '#E5E7EB', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {item.image
+                        ? <img src={getImageSrc(item.image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        : <ImageOutlined style={{ fontSize: '64px', color: '#9CA3AF' }} />}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <CategoryBadge category={item.category} />
-                        <PostTypeBadge post_type={item.post_type} />
                       </div>
                       <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 600, color: '#000000', margin: 0 }}>{item.name}</h3>
                       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><LocationOn style={{ fontSize: '16px' }} /> {item.location}</p>
@@ -274,7 +294,7 @@ const LostFound = () => {
               <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '50px', fontWeight: 600, color: '#000000', margin: 0 }}>Lost & Found</h1>
               {isAdmin ? <ApproveRequestsBtn /> : (
                 <button onClick={handleReportLost} className="bg-[#b7c9dc] hover:bg-[#8f9dad] text-black font-medium transition-colors duration-200" style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', width: '200px', height: '52px', borderRadius: '16px', border: 'none', outline: 'none', cursor: 'pointer' }}>
-                  Report Lost / Found
+                  Report Lost
                 </button>
               )}
             </div>
@@ -291,7 +311,9 @@ const LostFound = () => {
               <div className="flex" style={{ gap: '40px' }}>
                 <div>
                   <div style={{ width: '400px', height: '300px', backgroundColor: '#E5E7EB', border: '1px solid #D1D5DB', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    <ImageOutlined style={{ fontSize: '80px', color: '#9CA3AF' }} />
+                    {selectedItem.image
+                      ? <img src={getImageSrc(selectedItem.image)} alt={selectedItem.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <ImageOutlined style={{ fontSize: '80px', color: '#9CA3AF' }} />}
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -342,22 +364,6 @@ const LostFound = () => {
           <div style={{ padding: '40px 80px', maxWidth: '800px' }}>
             <div className="flex flex-col" style={{ gap: '24px' }}>
 
-              {/* Post Type */}
-              <div>
-                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Post Type *</label>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  {['lost', 'found'].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => handleFormChange('post_type', type)}
-                      style={{ flex: 1, height: '48px', borderRadius: '20px', border: `2px solid ${formData.post_type === type ? (type === 'lost' ? '#7C3AED' : '#059669') : '#D1D5DB'}`, backgroundColor: formData.post_type === type ? (type === 'lost' ? '#7C3AED' : '#059669') : '#FFFFFF', color: formData.post_type === type ? '#FFFFFF' : '#6B7280', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s' }}
-                    >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               {/* Category Dropdown */}
               <div style={{ position: 'relative' }}>
@@ -385,12 +391,51 @@ const LostFound = () => {
               ].map(({ label, field, placeholder }) => (
                 <div key={field}>
                   <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>{label}</label>
-                  <input type="text" value={formData[field]} onChange={(e) => handleFormChange(field, e.target.value)} placeholder={placeholder} maxLength={field === 'contact' ? 11 : undefined} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
+                  <input type={field === 'contact' ? 'tel' : 'text'} value={formData[field]} onChange={(e) => {
+                    let value = e.target.value;
+                    if (field === 'contact') {
+                      value = value.replace(/[^0-9+]/g, '');
+                    }
+                    handleFormChange(field, value);
+                  }} placeholder={placeholder} maxLength={field === 'contact' ? 14 : undefined} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
                   {field === 'contact' && formData.contact && formData.contact.length !== 11 && (
                     <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '6px', marginLeft: '8px', fontFamily: 'Inter, sans-serif' }}>Phone number must be exactly 11 digits</p>
                   )}
                 </div>
               ))}
+
+              {/* Image Upload */}
+              <div>
+                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Image (optional)</label>
+                {imagePreview && (
+                  <div style={{ marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', width: '100%', height: '200px', backgroundColor: '#E5E7EB' }}>
+                    <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                )}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '48px', border: '1px dashed #D1D5DB', borderRadius: '30px', padding: '0 20px', cursor: 'pointer', backgroundColor: '#FAFAFA' }}>
+                  <ImageOutlined style={{ fontSize: '20px', color: '#9CA3AF' }} />
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>
+                    {imageFile ? 'Change image' : 'Upload image'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      if (imagePreview) URL.revokeObjectURL(imagePreview);
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }}
+                  />
+                </label>
+                {imageFile && (
+                  <button type="button" onClick={() => { URL.revokeObjectURL(imagePreview); setImageFile(null); setImagePreview(''); }} style={{ marginTop: '6px', marginLeft: '8px', background: 'none', border: 'none', color: '#EF4444', fontFamily: 'Inter, sans-serif', fontSize: '12px', cursor: 'pointer', padding: 0 }}>
+                    Remove image
+                  </button>
+                )}
+              </div>
 
               <button onClick={handleSubmit} disabled={!isFormValid || submitting} className={`font-medium transition-colors duration-200 ${isFormValid && !submitting ? 'bg-[#b7c9dc] hover:bg-[#8f9dad] text-black' : 'bg-[#9CA3AF] text-black cursor-not-allowed'}`} style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', width: '100%', height: '52px', borderRadius: '16px', border: 'none', outline: 'none', cursor: isFormValid && !submitting ? 'pointer' : 'not-allowed', marginTop: '16px' }}>
                 {submitting ? 'Submitting…' : 'Submit'}

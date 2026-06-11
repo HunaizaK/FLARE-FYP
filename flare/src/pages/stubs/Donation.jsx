@@ -123,46 +123,50 @@ const Donation = () => {
         </div>
 
         <div style={{ padding: '20px 30px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', maxWidth: '1400px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 380px))', gap: '24px', maxWidth: '1400px', width: '100%' }}>
             {donationCards.map((card) => (
-              <div key={card.id} className="relative" style={{ width: '100%', height: '263px', backgroundColor: '#DBEAFE', borderRadius: '24px', padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div key={card.id} className="relative" style={{ width: '100%', aspectRatio: '1.586', backgroundColor: '#DBEAFE', borderRadius: '20px', padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
 
-                {isOrganization && card.added_by === currentUserId && (
-                  <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 2 }}>
-                    <button onClick={() => setOpenMenuId(openMenuId === card.id ? null : card.id)} style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.85)', border: 'none', outline: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <MoreVertOutlined style={{ fontSize: '18px', color: '#374151' }} />
-                    </button>
-                    {openMenuId === card.id && (
-                      <>
-                        <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setOpenMenuId(null)} />
-                        <div style={{ position: 'absolute', top: '36px', right: 0, backgroundColor: '#FFFFFF', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 11, minWidth: '120px', overflow: 'hidden' }}>
-                          {[
-                            { label: 'Edit',   color: '#1F2937', hover: '#F9FAFB', fn: () => { setEditTarget(card); setEditForm({ account_title: card.account_title, account_no: card.account_no, bank_name: card.bank_name, iban: card.iban }); setShowEditPopup(true); setOpenMenuId(null); } },
-                            { label: 'Delete', color: '#EF4444', hover: '#FEF2F2', fn: () => { setSelectedCardId(card.id); setShowDeletePopup(true); setOpenMenuId(null); } },
-                          ].map(({ label, color, hover, fn }) => (
-                            <div key={label} onClick={fn} style={{ padding: '10px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                              {label}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                <div style={{ opacity: 0.3, marginBottom: '16px' }}>
-                  <AccountBalanceOutlined style={{ fontSize: '80px', color: '#3B82F6' }} />
+                {/* Top row: icon + menu */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <AccountBalanceOutlined style={{ fontSize: '36px', color: '#3B82F6', opacity: 0.4 }} />
+                  {isOrganization && card.added_by === currentUserId && (
+                    <div style={{ position: 'relative' }}>
+                      <button onClick={() => setOpenMenuId(openMenuId === card.id ? null : card.id)} style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.85)', border: 'none', outline: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <MoreVertOutlined style={{ fontSize: '16px', color: '#374151' }} />
+                      </button>
+                      {openMenuId === card.id && (
+                        <>
+                          <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setOpenMenuId(null)} />
+                          <div style={{ position: 'absolute', top: '32px', right: 0, backgroundColor: '#FFFFFF', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 11, minWidth: '120px', overflow: 'hidden' }}>
+                            {[
+                              { label: 'Edit',   color: '#1F2937', hover: '#F9FAFB', fn: () => { setEditTarget(card); setEditForm({ account_title: card.account_title, account_no: card.account_no, bank_name: card.bank_name, iban: card.iban }); setShowEditPopup(true); setOpenMenuId(null); } },
+                              { label: 'Delete', color: '#EF4444', hover: '#FEF2F2', fn: () => { setSelectedCardId(card.id); setShowDeletePopup(true); setOpenMenuId(null); } },
+                            ].map(({ label, color, hover, fn }) => (
+                              <div key={label} onClick={fn} style={{ padding: '10px 16px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                {label}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: '#000000', marginBottom: '2px' }}>{card.account_title}</h3>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 400, color: '#6B7280', marginBottom: '2px' }}>{card.bank_name}</p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 400, color: '#6B7280', marginBottom: '12px' }}>A/C: {card.account_no}</p>
-                  <div className="flex items-center justify-between">
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000' }}>{card.iban}</span>
-                    <button onClick={() => handleCopyIban(card.iban)} style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}>
-                      <ContentCopyOutlined style={{ fontSize: '18px', color: '#000000' }} />
-                    </button>
-                  </div>
+
+                {/* Middle: account info */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 700, color: '#000000', margin: 0 }}>{card.account_title}</h3>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#6B7280', margin: 0 }}>{card.bank_name}</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#6B7280', margin: 0 }}>Account no.: {card.account_no}</p>
+                </div>
+
+                {/* Bottom: IBAN */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#000000', letterSpacing: '0.5px' }}>IBAN: {card.iban}</span>
+                  <button onClick={() => handleCopyIban(card.iban)} style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}>
+                    <ContentCopyOutlined style={{ fontSize: '16px', color: '#374151' }} />
+                  </button>
                 </div>
               </div>
             ))}

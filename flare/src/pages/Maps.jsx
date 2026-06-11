@@ -44,7 +44,6 @@ import {
 } from '@mui/icons-material';
 import { TbWavesElectricity } from 'react-icons/tb';
 import { IoWaterOutline, IoHomeOutline } from 'react-icons/io5';
-import { MdOutlineHistory } from 'react-icons/md';
 import { FaEarthAmericas } from 'react-icons/fa6';
 import Navbar from '../components/Navbar';
 import api from '../services/api';
@@ -67,8 +66,9 @@ const center = {
 const Maps = () => {
   const [flyTarget, setFlyTarget] = useState(null);
   const [shelters, setShelters] = useState([]);
-  const accountType = useSelector((state) => state.auth.accountType);
-  const currentUser = useSelector((state) => state.auth.user);
+  const accountType   = useSelector((state) => state.auth.accountType);
+  const currentUser   = useSelector((state) => state.auth.user);
+  const currentUserId = useSelector((state) => state.auth.userId);
 
   useEffect(() => {
     api.get('/shelters')
@@ -107,7 +107,6 @@ const Maps = () => {
   const [showViewOptions, setShowViewOptions] = useState(false);
   const [mapType, setMapType] = useState('map');
   const [selectedGauge, setSelectedGauge] = useState(null);
-  const [showBasinSize, setShowBasinSize] = useState(false);
   const [selectedShelter, setSelectedShelter] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', phone: '' });
@@ -119,7 +118,6 @@ const Maps = () => {
   const [layers, setLayers] = useState({
     riverGauges: true,
     inundationProbability: false,
-    inundationHistory: false,
     shelters: true,
   });
 
@@ -605,72 +603,6 @@ const Maps = () => {
                 </div>
 
                 {/* Separator Line */}
-                <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
-
-                {/* Inundation History */}
-                <div style={{ paddingBottom: '2px' }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MdOutlineHistory style={{ fontSize: '24px', color: '#000000' }} />
-                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, color: '#000000' , paddingLeft: "10px" }}>
-                        Inundation History
-                      </span>
-                    </div>
-                    <label className="relative inline-block" style={{ width: '48px', height: '24px' }}>
-                      <input
-                        type="checkbox"
-                        checked={layers.inundationHistory}
-                        onChange={() => toggleLayer('inundationHistory')}
-                        className="opacity-0 w-0 h-0"
-                      />
-                      <span
-                        style={{
-                          position: 'absolute',
-                          cursor: 'pointer',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          backgroundColor: layers.inundationHistory ? '#3a88d6ff' : '#D1D5DB',
-                          borderRadius: '24px',
-                          transition: 'background-color 0.2s',
-                        }}
-                      >
-                        <span
-                          style={{
-                            position: 'absolute',
-                            content: '""',
-                            height: '20px',
-                            width: '20px',
-                            left: layers.inundationHistory ? '26px' : '2px',
-                            bottom: '2px',
-                            backgroundColor: 'white',
-                            borderRadius: '50%',
-                            transition: 'left 0.2s',
-                          }}
-                        />
-                      </span>
-                    </label>
-                  </div>
-                  {layers.inundationHistory && (
-                    <div style={{ marginTop: '12px', marginLeft: '36px' }}>
-                      <div className="flex flex-col" style={{ gap: '8px' }}>
-                        <div className="flex items-center gap-3">
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
-                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Wet 5%</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#A78BFA' }} />
-                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px',color: '#000000ff', paddingLeft: "10px" }}>Wet 1%</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#DDD6FE' }} />
-                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#000000ff', paddingLeft: "10px" }}>Wet 0.5%</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 {/* Separator Line */}
                 <div style={{ height: '1px', backgroundColor: '#6d707054', margin: '10px 0' }} />
@@ -795,7 +727,7 @@ const Maps = () => {
                           <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Phone</span>
                           <span style={{ fontSize: '14px', fontWeight: 500, color: '#000000' }}>{shelter.phone || 'N/A'}</span>
                         </div>
-                        {accountType === 'organization' && String(shelter.added_by) === String(shelter.added_by) && (
+                        {accountType === 'organization' && String(shelter.added_by) === String(currentUserId) && (
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button onClick={() => { setSelectedShelter(shelter); setEditMode(true); setEditForm({ name: shelter.name, phone: shelter.phone || '' }); }}
                               style={{ flex: 1, height: '32px', backgroundColor: '#b7c9dc', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer' }}>
@@ -824,7 +756,7 @@ const Maps = () => {
                         </div>
                         <div style={{ marginBottom: '12px' }}>
                           <label style={{ fontSize: '12px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Phone</label>
-                          <input type="text" value={editForm.phone} onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))} maxLength={11}
+                          <input type="tel" value={editForm.phone} onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value.replace(/[^0-9+]/g, '') }))} maxLength={14}
                             style={{ width: '100%', height: '34px', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '0 10px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -874,7 +806,7 @@ const Maps = () => {
                   <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Phone</span>
                   <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000' }}>{selectedShelter.phone || 'N/A'}</span>
                 </div>
-                {accountType === 'organization' && selectedShelter.email === currentUser && (
+                {accountType === 'organization' && String(selectedShelter.added_by) === String(currentUserId) && (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       onClick={() => { setEditMode(true); setEditForm({ name: selectedShelter.name, phone: selectedShelter.phone || '' }); }}
@@ -1201,7 +1133,7 @@ const Maps = () => {
                           fontWeight: 500,
                           color: '#000000',
                         }}>
-                          {selectedGaugeForecast?.source ?? '—'}
+                          WAPDA
                         </p>
                       </div>
 
@@ -1253,68 +1185,6 @@ const Maps = () => {
                         </p>
                       </div>
 
-                      <div>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                        }}>
-                          <div>
-                            <p style={{ 
-                              fontFamily: 'Inter, sans-serif', 
-                              fontSize: '13px', 
-                              color: '#6B7280', 
-                              marginBottom: '6px',
-                              fontWeight: 400,
-                            }}>
-                              Basin size (km²)
-                            </p>
-                            <p style={{
-                              fontFamily: 'Inter, sans-serif',
-                              fontSize: '15px',
-                              fontWeight: 500,
-                              color: '#000000',
-                            }}>
-                              {selectedGaugeForecast?.basin_size ?? '—'}
-                            </p>
-                          </div>
-                          <label className="relative inline-block" style={{ width: '48px', height: '24px', marginTop: '8px' }}>
-                            <input
-                              type="checkbox"
-                              checked={showBasinSize}
-                              onChange={() => setShowBasinSize(!showBasinSize)}
-                              className="opacity-0 w-0 h-0"
-                            />
-                            <span
-                              style={{
-                                position: 'absolute',
-                                cursor: 'pointer',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: showBasinSize ? '#3a88d6ff' : '#D1D5DB',
-                                borderRadius: '24px',
-                                transition: 'background-color 0.2s',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  position: 'absolute',
-                                  content: '""',
-                                  height: '20px',
-                                  width: '20px',
-                                  left: showBasinSize ? '26px' : '2px',
-                                  bottom: '2px',
-                                  backgroundColor: 'white',
-                                  borderRadius: '50%',
-                                  transition: 'left 0.2s',
-                                }}
-                              />
-                            </span>
-                          </label>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>

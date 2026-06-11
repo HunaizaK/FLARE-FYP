@@ -42,6 +42,11 @@ const SignUpForm = () => {
     return '';
   };
 
+  // Helper: Allow only digits and + symbol
+  const sanitizePhoneInput = (value) => {
+    return value.replace(/[^0-9+]/g, '');
+  };
+
   // Pakistani phone number validation (03XX-XXXXXXX format)
   const validateContactNo = (contactNo) => {
     const phoneRegex = /^03[0-9]{9}$/;
@@ -100,7 +105,9 @@ const SignUpForm = () => {
         error = validateEmail(value);
         break;
       case 'contact_no':
-        error = validateContactNo(value);
+        const sanitized = sanitizePhoneInput(value);
+        setFormData(prev => ({ ...prev, contact_no: sanitized }));
+        error = validateContactNo(sanitized);
         break;
       case 'password':
         error = validatePassword(value);

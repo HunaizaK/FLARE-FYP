@@ -4,7 +4,7 @@ import Navbar from '../../components/Navbar';
 import {
   SearchOutlined, CheckOutlined, CloseOutlined,
   KeyboardArrowUpOutlined, KeyboardArrowDownOutlined,
-  UnfoldMoreOutlined, ArrowBackOutlined, RefreshOutlined,
+  UnfoldMoreOutlined, ArrowBackOutlined,
 } from '@mui/icons-material';
 import api from '../../services/api';
 
@@ -89,9 +89,6 @@ const SignUpApproval = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
             <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 600, color: '#000000', margin: 0 }}>Sign-up Approvals</h1>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={loadOrgs} style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 20px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '2px solid #b7c9dc', outline: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000', boxShadow: '0 0px 12px rgba(0,0,0,0.10)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f5f9'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}>
-                <RefreshOutlined style={{ fontSize: '18px' }} /> Refresh
-              </button>
               <button onClick={() => navigate('/admin/users')} style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 24px', borderRadius: '12px', backgroundColor: '#b7c9dc', border: 'none', outline: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000', boxShadow: '0 0px 12px rgba(0,0,0,0.18)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8f9dad'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#b7c9dc'}>
                 <ArrowBackOutlined style={{ fontSize: '18px', color: '#000000' }} /> Back
               </button>

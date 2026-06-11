@@ -25,7 +25,6 @@ const Navbar = () => {
     { icon: <AssessmentOutlined />, label: 'Reports', path: '/reports' },
     { icon: <LuggageOutlined />, label: 'Lost & Found', path: '/lost-found' },
     { icon: <VolunteerActivismOutlined />, label: 'Donation', path: '/donation' },
-    { icon: <AssignmentOutlined />, label: 'My Requests', path: '/my-requests' },
     { icon: <SettingsOutlined />, label: 'Settings', path: '/settings' },
   ];
 
@@ -35,7 +34,6 @@ const Navbar = () => {
     { icon: <AssessmentOutlined />, label: 'Reports', path: '/reports' },
     { icon: <LuggageOutlined />, label: 'Lost & Found', path: '/lost-found' },
     { icon: <VolunteerActivismOutlined />, label: 'Donation', path: '/donation' },
-    { icon: <AssignmentOutlined />, label: 'My Requests', path: '/my-requests' },
     { icon: <SettingsOutlined />, label: 'Settings', path: '/settings' },
   ];
 
@@ -187,10 +185,10 @@ const Navbar = () => {
                 transition: 'background-color 0.2s ease-in-out',
               }}
             >
-              <span 
-                style={{ 
-                  fontSize: '28px', 
-                  display: 'flex', 
+              <span
+                style={{
+                  fontSize: '28px',
+                  display: 'flex',
                   alignItems: 'center',
                   minWidth: '28px',
                 }}

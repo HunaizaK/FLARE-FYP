@@ -37,8 +37,14 @@ def get_posts(current_user: dict = Depends(require_approved_user)):
                 ORDER BY p.created_at DESC
                 """
             )
-        posts = cursor.fetchall()
-        return {"success": True, "message": "Posts retrieved successfully", "data": list(posts)}
+        rows = cursor.fetchall()
+        result = []
+        for post in rows:
+            row = dict(post)
+            if row.get("image") is not None:
+                row["image"] = base64.b64encode(bytes(row["image"])).decode("utf-8")
+            result.append(row)
+        return {"success": True, "message": "Posts retrieved successfully", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:

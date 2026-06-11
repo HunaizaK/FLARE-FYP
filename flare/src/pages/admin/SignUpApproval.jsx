@@ -10,9 +10,7 @@ import api from '../../services/api';
 
 const COLUMNS = [
   { key: 'email',             label: 'Email' },
-  { key: 'contact_person',    label: 'Contact Person' },
   { key: 'organization_name', label: 'Organization Name' },
-  { key: 'address',           label: 'Address' },
 ];
 
 const SignUpApproval = () => {
@@ -61,8 +59,7 @@ const SignUpApproval = () => {
     const filtered = users.filter(
       (u) =>
         (u.email             ?? '').toLowerCase().includes(q) ||
-        (u.organization_name ?? '').toLowerCase().includes(q) ||
-        (u.contact_person    ?? '').toLowerCase().includes(q)
+        (u.organization_name ?? '').toLowerCase().includes(q)
     );
     return [...filtered].sort((a, b) => {
       const av = a[sortField] ?? '';
@@ -98,7 +95,7 @@ const SignUpApproval = () => {
           <div style={{ maxWidth: '560px', marginBottom: '32px' }}>
             <div style={{ height: '45px', paddingLeft: '16px', paddingRight: '12px', backgroundColor: '#FFFFFF', border: '1px solid #5f6063ab', borderRadius: '30px', display: 'flex', alignItems: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
               <SearchOutlined style={{ color: '#9CA3AF', fontSize: '22px', marginRight: '12px', flexShrink: 0 }} />
-              <input type="text" placeholder="Search by email, organization or contact person" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, outline: 'none', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#1F2937', backgroundColor: 'transparent' }} />
+              <input type="text" placeholder="Search by email or organization" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, outline: 'none', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#1F2937', backgroundColor: 'transparent' }} />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '50%', flexShrink: 0 }}>
                   <CloseOutlined style={{ color: '#9CA3AF', fontSize: '18px' }} />
@@ -121,13 +118,11 @@ const SignUpApproval = () => {
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No pending approvals'}</td></tr>
+                  <tr><td colSpan={3} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No pending approvals'}</td></tr>
                 ) : rows.map((user, index) => (
                   <tr key={user.id} style={{ borderBottom: index < rows.length - 1 ? '1px solid #F3F4F6' : 'none', transition: 'background-color 0.15s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fafbfc')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                     <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{user.email}</td>
-                    <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{user.contact_person || '—'}</td>
                     <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{user.organization_name}</td>
-                    <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280' }}>{user.address || '—'}</td>
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                         <button onClick={() => handleAccept(user.id)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px', backgroundColor: '#b7c9dc', border: '2px solid #b7c9dc', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#8f9dad'; e.currentTarget.style.borderColor = '#8f9dad'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#b7c9dc'; e.currentTarget.style.borderColor = '#b7c9dc'; }}>

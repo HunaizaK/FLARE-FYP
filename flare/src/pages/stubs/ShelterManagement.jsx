@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 
 const FlyToHandler = ({ target }) => {
   const map = useMap();
@@ -16,7 +16,6 @@ const MapClickHandler = ({ onMapClick }) => {
 
 import { useSelector } from 'react-redux';
 import L from 'leaflet';
-import { CloseOutlined } from '@mui/icons-material';
 import { FaEarthAmericas } from 'react-icons/fa6';
 import Navbar from '../../components/Navbar';
 import api from '../../services/api';
@@ -200,9 +199,65 @@ const ShelterManagement = () => {
                   html: `<div style="background-color: #222ba8; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>`,
                   iconSize: [32, 32],
                   iconAnchor: [16, 32],
+                  popupAnchor: [0, -36],
                 })}
                 eventHandlers={{ click: () => { setSelectedShelter(shelter); setEditMode(false); } }}
-              />
+              >
+                <Popup minWidth={260} maxWidth={320}>
+                  <div style={{ fontFamily: 'Inter, sans-serif', padding: '4px 2px' }}>
+                    <div style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 600, color: '#000000', marginBottom: '12px' }}>Shelter Info</div>
+                    {!(selectedShelter?.id === shelter.id && editMode) ? (
+                      <>
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Name</span>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#000000' }}>{shelter.shelter_name}</span>
+                        </div>
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Capacity</span>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#000000' }}>{shelter.capacity ?? 'N/A'}</span>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Location</span>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#000000' }}>{shelter.location || 'N/A'}</span>
+                        </div>
+                        {isOrg && shelter.added_by === currentUserId && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={() => { setEditMode(true); setEditForm({ shelter_name: shelter.shelter_name, capacity: shelter.capacity || '' }); }}
+                              style={{ flex: 1, height: '32px', backgroundColor: '#b7c9dc', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer' }}>
+                              Edit
+                            </button>
+                            <button
+                              onClick={handleRequestDelete}
+                              style={{ flex: 1, height: '32px', backgroundColor: '#FFFFFF', border: '2px solid #F87171', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#EF4444', cursor: 'pointer' }}>
+                              Request Delete
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Name</label>
+                          <input type="text" value={editForm.shelter_name} onChange={(e) => setEditForm(prev => ({ ...prev, shelter_name: e.target.value }))}
+                            style={{ width: '100%', height: '34px', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '0 10px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Capacity</label>
+                          <input type="number" min="1" value={editForm.capacity} onChange={(e) => setEditForm(prev => ({ ...prev, capacity: e.target.value }))}
+                            style={{ width: '100%', height: '34px', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '0 10px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={handleEditSave}
+                            style={{ flex: 1, height: '32px', backgroundColor: '#b7c9dc', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer' }}>Save</button>
+                          <button onClick={() => setEditMode(false)}
+                            style={{ flex: 1, height: '32px', backgroundColor: '#FFFFFF', border: '2px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#6B7280', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
             ))}
 
             {markerPosition && (
@@ -285,59 +340,6 @@ const ShelterManagement = () => {
         )}
       </div>
 
-      {/* Shelter Info Overlay */}
-      {selectedShelter && (
-        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '20px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', zIndex: 1001, width: editMode ? '380px' : '300px', transition: 'width 0.2s ease' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#000000', margin: 0 }}>Shelter Info</h3>
-            <button onClick={() => { setSelectedShelter(null); setEditMode(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}>
-              <CloseOutlined style={{ color: '#6B7280', fontSize: '20px' }} />
-            </button>
-          </div>
-
-          {!editMode ? (
-            <>
-              <div style={{ marginBottom: '10px' }}>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Name</span>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000' }}>{selectedShelter.shelter_name}</span>
-              </div>
-              <div style={{ marginBottom: '14px' }}>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Capacity</span>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000' }}>{selectedShelter.capacity ?? 'N/A'}</span>
-              </div>
-              {isOrg && selectedShelter.added_by === currentUserId && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => { setEditMode(true); setEditForm({ shelter_name: selectedShelter.shelter_name, capacity: selectedShelter.capacity || '' }); }} style={{ flex: 1, height: '36px', backgroundColor: '#b7c9dc', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color: '#000000', cursor: 'pointer', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#8f9dad'} onMouseLeave={(e) => e.target.style.backgroundColor = '#b7c9dc'}>
-                    Edit
-                  </button>
-                  <button onClick={handleRequestDelete} style={{ flex: 1, height: '36px', backgroundColor: '#FFFFFF', border: '2px solid #F87171', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color: '#EF4444', cursor: 'pointer', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}>
-                    Request Delete
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Name</label>
-                <input type="text" value={editForm.shelter_name} onChange={(e) => setEditForm(prev => ({ ...prev, shelter_name: e.target.value }))} style={{ width: '100%', height: '38px', border: '1px solid #D1D5DB', borderRadius: '12px', padding: '0 12px', fontFamily: 'Inter, sans-serif', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Capacity</label>
-                <input type="number" min="1" value={editForm.capacity} onChange={(e) => setEditForm(prev => ({ ...prev, capacity: e.target.value }))} style={{ width: '100%', height: '38px', border: '1px solid #D1D5DB', borderRadius: '12px', padding: '0 12px', fontFamily: 'Inter, sans-serif', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleEditSave} style={{ flex: 1, height: '36px', backgroundColor: '#b7c9dc', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color: '#000000', cursor: 'pointer', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#8f9dad'} onMouseLeave={(e) => e.target.style.backgroundColor = '#b7c9dc'}>
-                  Save
-                </button>
-                <button onClick={() => setEditMode(false)} style={{ flex: 1, height: '36px', backgroundColor: '#FFFFFF', border: '2px solid #D1D5DB', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color: '#6B7280', cursor: 'pointer', transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}>
-                  Cancel
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {showDeleteToast && (
         <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#1F618A', color: '#FFFFFF', padding: '12px 24px', borderRadius: '12px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, zIndex: 2000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>

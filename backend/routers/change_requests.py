@@ -30,17 +30,23 @@ def get_all_change_requests(
             cursor.execute(
                 """
                 SELECT cr.*, u.username, u.contact_no,
-                    s.location     AS shelter_location,
-                    s.shelter_name AS shelter_name_db,
-                    lf.location    AS lf_location,
-                    lf.name        AS lf_name,
-                    lf.category    AS lf_category
+                    s.location        AS shelter_location,
+                    s.shelter_name    AS shelter_name_db,
+                    lf.location       AS lf_location,
+                    lf.name           AS lf_name,
+                    lf.category       AS lf_category,
+                    da.account_title  AS da_account_title,
+                    da.account_no     AS da_account_no,
+                    da.bank_name      AS da_bank_name,
+                    da.iban           AS da_iban
                 FROM change_requests cr
                 LEFT JOIN app_users u ON u.id = cr.requested_by
                 LEFT JOIN shelters s
                     ON cr.record_id IS NOT NULL AND s.id::text = cr.record_id::text AND cr.table_name = 'shelters'
                 LEFT JOIN lost_found_posts lf
                     ON cr.record_id IS NOT NULL AND lf.id::text = cr.record_id::text AND cr.table_name = 'lost_found_posts'
+                LEFT JOIN donation_accounts da
+                    ON cr.record_id IS NOT NULL AND da.id::text = cr.record_id::text AND cr.table_name = 'donation_accounts'
                 WHERE cr.status = %s
                 ORDER BY cr.created_at DESC
                 """,
@@ -50,17 +56,23 @@ def get_all_change_requests(
             cursor.execute(
                 """
                 SELECT cr.*, u.username, u.contact_no,
-                    s.location     AS shelter_location,
-                    s.shelter_name AS shelter_name_db,
-                    lf.location    AS lf_location,
-                    lf.name        AS lf_name,
-                    lf.category    AS lf_category
+                    s.location        AS shelter_location,
+                    s.shelter_name    AS shelter_name_db,
+                    lf.location       AS lf_location,
+                    lf.name           AS lf_name,
+                    lf.category       AS lf_category,
+                    da.account_title  AS da_account_title,
+                    da.account_no     AS da_account_no,
+                    da.bank_name      AS da_bank_name,
+                    da.iban           AS da_iban
                 FROM change_requests cr
                 LEFT JOIN app_users u ON u.id = cr.requested_by
                 LEFT JOIN shelters s
                     ON cr.record_id IS NOT NULL AND s.id::text = cr.record_id::text AND cr.table_name = 'shelters'
                 LEFT JOIN lost_found_posts lf
                     ON cr.record_id IS NOT NULL AND lf.id::text = cr.record_id::text AND cr.table_name = 'lost_found_posts'
+                LEFT JOIN donation_accounts da
+                    ON cr.record_id IS NOT NULL AND da.id::text = cr.record_id::text AND cr.table_name = 'donation_accounts'
                 ORDER BY cr.created_at DESC
                 """
             )

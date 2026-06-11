@@ -1,0 +1,756 @@
+{
+  "Kotli": {
+    "gauge": "Kotli",
+    "generated_at": "2026-05-29 15:36:53",
+    "status": "Normal",
+    "lat": 33.488889,
+    "lon": 73.884722,
+    "station": "KOTLI",
+    "river": "POONCH",
+    "thresholds": {
+      "warning": 337.3,
+      "severe": 449.8,
+      "extreme": 534.1
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 179.4,
+        "lower_20": 230.1,
+        "upper_80": 321.9
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 176.0,
+        "lower_20": 244.5,
+        "upper_80": 351.8
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 174.0,
+        "lower_20": 229.9,
+        "upper_80": 325.5
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 174.2,
+        "lower_20": 218.9,
+        "upper_80": 308.2
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 174.4,
+        "lower_20": 212.9,
+        "upper_80": 299.6
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 173.3,
+        "lower_20": 207.1,
+        "upper_80": 292.2
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 171.4,
+        "lower_20": 193.6,
+        "upper_80": 286.1
+      }
+    ]
+  },
+  "Phulra": {
+    "gauge": "Phulra",
+    "generated_at": "2026-05-29 15:36:53",
+    "status": "Normal",
+    "lat": 34.313889,
+    "lon": 73.078333,
+    "station": "PHULRA",
+    "river": "SIRAN",
+    "thresholds": {
+      "warning": 189.1,
+      "severe": 252.1,
+      "extreme": 299.3
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 16.7,
+        "lower_20": 16.4,
+        "upper_80": 19.2
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 17.1,
+        "lower_20": 19.5,
+        "upper_80": 25.9
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 17.4,
+        "lower_20": 22.5,
+        "upper_80": 31.9
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 17.8,
+        "lower_20": 24.9,
+        "upper_80": 36.9
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 18.1,
+        "lower_20": 26.6,
+        "upper_80": 41.0
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 18.5,
+        "lower_20": 31.9,
+        "upper_80": 44.4
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 18.9,
+        "lower_20": 33.5,
+        "upper_80": 47.3
+      }
+    ]
+  },
+  "Besham_Qila": {
+    "gauge": "Besham_Qila",
+    "generated_at": "2026-05-29 15:36:53",
+    "status": "Normal",
+    "lat": 34.924167,
+    "lon": 72.881944,
+    "station": "BESHAM QILA",
+    "river": "INDUS",
+    "thresholds": {
+      "warning": 6687.0,
+      "severe": 8916.0,
+      "extreme": 10587.8
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 4865.1,
+        "lower_20": 4510.2,
+        "upper_80": 5285.3
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 5120.6,
+        "lower_20": 4746.5,
+        "upper_80": 5842.9
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 5512.4,
+        "lower_20": 5014.5,
+        "upper_80": 6509.1
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 5690.7,
+        "lower_20": 5080.0,
+        "upper_80": 6898.4
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 5710.5,
+        "lower_20": 5020.8,
+        "upper_80": 7095.2
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 5621.3,
+        "lower_20": 4871.4,
+        "upper_80": 7176.0
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 5470.8,
+        "lower_20": 4679.8,
+        "upper_80": 7186.0
+      }
+    ]
+  },
+  "Bunji": {
+    "gauge": "Bunji",
+    "generated_at": "2026-05-29 15:36:53",
+    "status": "Warning",
+    "lat": 35.664722,
+    "lon": 74.628333,
+    "station": "BUNJI",
+    "river": "INDUS",
+    "thresholds": {
+      "warning": 5541.0,
+      "severe": 7388.0,
+      "extreme": 8773.2
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 5573.4,
+        "lower_20": 5136.1,
+        "upper_80": 6361.3
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 5690.9,
+        "lower_20": 5230.2,
+        "upper_80": 6709.1
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 5708.2,
+        "lower_20": 5180.9,
+        "upper_80": 6954.5
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 5572.2,
+        "lower_20": 4965.7,
+        "upper_80": 6916.9
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 5388.4,
+        "lower_20": 4736.2,
+        "upper_80": 6807.5
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 5156.5,
+        "lower_20": 4474.5,
+        "upper_80": 6679.0
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 4889.0,
+        "lower_20": 4194.3,
+        "upper_80": 6537.4
+      }
+    ]
+  },
+  "Shatial_Bridge": {
+    "gauge": "Shatial_Bridge",
+    "generated_at": "2026-05-29 15:36:53",
+    "status": "Normal",
+    "lat": 35.532222,
+    "lon": 73.564444,
+    "station": "SHATIAL BRIDGE",
+    "river": "INDUS",
+    "thresholds": {
+      "warning": 6194.1,
+      "severe": 8258.8,
+      "extreme": 9807.4
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 5224.6,
+        "lower_20": 4812.8,
+        "upper_80": 6061.9
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 5770.9,
+        "lower_20": 5205.2,
+        "upper_80": 6728.5
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 6182.2,
+        "lower_20": 5542.4,
+        "upper_80": 7164.8
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 6315.5,
+        "lower_20": 5590.6,
+        "upper_80": 7408.7
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 6279.0,
+        "lower_20": 5496.6,
+        "upper_80": 7480.8
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 6123.4,
+        "lower_20": 5292.8,
+        "upper_80": 7452.9
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 5899.5,
+        "lower_20": 5037.9,
+        "upper_80": 7375.3
+      }
+    ]
+  },
+  "Chakothi": {
+    "gauge": "Chakothi",
+    "generated_at": "2026-05-29 15:36:53",
+    "status": "Normal",
+    "lat": 34.108056,
+    "lon": 73.9025,
+    "station": "CHAKOTHI",
+    "river": "JHELUM",
+    "thresholds": {
+      "warning": 457.9,
+      "severe": 610.6,
+      "extreme": 725.0
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 297.2,
+        "lower_20": 281.9,
+        "upper_80": 331.0
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 285.0,
+        "lower_20": 269.8,
+        "upper_80": 324.0
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 271.3,
+        "lower_20": 256.6,
+        "upper_80": 317.9
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 258.9,
+        "lower_20": 244.3,
+        "upper_80": 305.8
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 247.4,
+        "lower_20": 233.2,
+        "upper_80": 292.5
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 237.1,
+        "lower_20": 223.3,
+        "upper_80": 280.3
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 228.2,
+        "lower_20": 214.7,
+        "upper_80": 270.1
+      }
+    ]
+  },
+  "Chattar_Kalass": {
+    "gauge": "Chattar_Kalass",
+    "generated_at": "2026-05-29 15:36:53",
+    "status": "Normal",
+    "lat": 34.208333,
+    "lon": 73.5,
+    "station": "CHATTAR KALASS",
+    "river": "JHELUM",
+    "thresholds": {
+      "warning": 1258.2,
+      "severe": 1677.6,
+      "extreme": 1992.1
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 755.9,
+        "lower_20": 882.6,
+        "upper_80": 1172.8
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 722.9,
+        "lower_20": 944.5,
+        "upper_80": 1304.3
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 682.0,
+        "lower_20": 842.1,
+        "upper_80": 1146.4
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 653.2,
+        "lower_20": 775.0,
+        "upper_80": 1048.1
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 632.5,
+        "lower_20": 729.0,
+        "upper_80": 985.0
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 617.5,
+        "lower_20": 699.1,
+        "upper_80": 948.0
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 607.0,
+        "lower_20": 680.7,
+        "upper_80": 929.6
+      }
+    ]
+  },
+  "Domel": {
+    "gauge": "Domel",
+    "generated_at": "2026-05-29 15:36:54",
+    "status": "Normal",
+    "lat": 34.366667,
+    "lon": 73.466667,
+    "station": "DOMEL",
+    "river": "JHELUM",
+    "thresholds": {
+      "warning": 499.9,
+      "severe": 666.5,
+      "extreme": 791.4
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 339.6,
+        "lower_20": 323.0,
+        "upper_80": 373.6
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 324.1,
+        "lower_20": 306.2,
+        "upper_80": 371.7
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 311.9,
+        "lower_20": 294.1,
+        "upper_80": 365.1
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 301.5,
+        "lower_20": 283.4,
+        "upper_80": 356.7
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 291.7,
+        "lower_20": 273.6,
+        "upper_80": 347.3
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 282.2,
+        "lower_20": 264.2,
+        "upper_80": 337.5
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 273.3,
+        "lower_20": 255.5,
+        "upper_80": 328.4
+      }
+    ]
+  },
+  "Hattian_Bala": {
+    "gauge": "Hattian_Bala",
+    "generated_at": "2026-05-29 15:36:54",
+    "status": "Normal",
+    "lat": 34.166667,
+    "lon": 73.75,
+    "station": "HATTIAN BALA",
+    "river": "JHELUM",
+    "thresholds": {
+      "warning": 482.3,
+      "severe": 643.1,
+      "extreme": 763.7
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 307.2,
+        "lower_20": 292.0,
+        "upper_80": 336.7
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 291.3,
+        "lower_20": 274.6,
+        "upper_80": 341.5
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 280.9,
+        "lower_20": 284.6,
+        "upper_80": 342.9
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 272.6,
+        "lower_20": 278.0,
+        "upper_80": 339.4
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 264.5,
+        "lower_20": 269.8,
+        "upper_80": 332.5
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 256.5,
+        "lower_20": 258.6,
+        "upper_80": 324.5
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 249.1,
+        "lower_20": 250.9,
+        "upper_80": 317.0
+      }
+    ]
+  },
+  "Kaghan": {
+    "gauge": "Kaghan",
+    "generated_at": "2026-05-29 15:36:54",
+    "status": "Normal",
+    "lat": 34.558333,
+    "lon": 73.508333,
+    "station": "Kaghan",
+    "river": "Kunhar",
+    "thresholds": {
+      "warning": 102.5,
+      "severe": 136.7,
+      "extreme": 162.4
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 50.0,
+        "lower_20": 47.8,
+        "upper_80": 53.1
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 49.7,
+        "lower_20": 46.9,
+        "upper_80": 53.9
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 48.9,
+        "lower_20": 45.9,
+        "upper_80": 53.6
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 47.9,
+        "lower_20": 44.6,
+        "upper_80": 53.1
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 46.6,
+        "lower_20": 43.1,
+        "upper_80": 52.4
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 45.1,
+        "lower_20": 41.6,
+        "upper_80": 51.5
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 43.6,
+        "lower_20": 39.9,
+        "upper_80": 50.6
+      }
+    ]
+  },
+  "Talhata_Bridge": {
+    "gauge": "Talhata_Bridge",
+    "generated_at": "2026-05-29 15:36:54",
+    "status": "Normal",
+    "lat": 34.472222,
+    "lon": 73.341667,
+    "station": "TALHATA",
+    "river": "KUNHAR",
+    "thresholds": {
+      "warning": 209.5,
+      "severe": 279.3,
+      "extreme": 331.6
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 76.9,
+        "lower_20": 71.5,
+        "upper_80": 83.1
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 75.9,
+        "lower_20": 70.6,
+        "upper_80": 83.4
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 74.0,
+        "lower_20": 68.2,
+        "upper_80": 82.0
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 72.3,
+        "lower_20": 66.4,
+        "upper_80": 80.9
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 70.8,
+        "lower_20": 64.7,
+        "upper_80": 80.0
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 69.4,
+        "lower_20": 63.1,
+        "upper_80": 79.4
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 68.2,
+        "lower_20": 61.7,
+        "upper_80": 78.9
+      }
+    ]
+  },
+  "Dhudhnial": {
+    "gauge": "Dhudhnial",
+    "generated_at": "2026-05-29 15:36:54",
+    "status": "Normal",
+    "lat": 34.704722,
+    "lon": 74.105833,
+    "station": "DUDHNIAL",
+    "river": "NEELUM",
+    "thresholds": {
+      "warning": 576.4,
+      "severe": 768.6,
+      "extreme": 912.7
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 132.4,
+        "lower_20": 125.7,
+        "upper_80": 144.7
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 129.5,
+        "lower_20": 120.9,
+        "upper_80": 146.4
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 125.5,
+        "lower_20": 116.3,
+        "upper_80": 144.7
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 122.1,
+        "lower_20": 112.4,
+        "upper_80": 143.8
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 118.8,
+        "lower_20": 109.1,
+        "upper_80": 143.1
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 115.5,
+        "lower_20": 105.4,
+        "upper_80": 142.5
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 112.3,
+        "lower_20": 101.7,
+        "upper_80": 142.0
+      }
+    ]
+  },
+  "Muzaffarabad": {
+    "gauge": "Muzaffarabad",
+    "generated_at": "2026-05-29 15:36:54",
+    "status": "Normal",
+    "lat": 34.366667,
+    "lon": 73.466667,
+    "station": "MUZAFFAR ABAD",
+    "river": "NEELUM",
+    "thresholds": {
+      "warning": 561.8,
+      "severe": 749.0,
+      "extreme": 889.5
+    },
+    "forecast": [
+      {
+        "date": "2022-08-11",
+        "predicted": 323.6,
+        "lower_20": 286.6,
+        "upper_80": 409.0
+      },
+      {
+        "date": "2022-08-12",
+        "predicted": 330.4,
+        "lower_20": 298.8,
+        "upper_80": 425.9
+      },
+      {
+        "date": "2022-08-13",
+        "predicted": 343.7,
+        "lower_20": 313.7,
+        "upper_80": 453.1
+      },
+      {
+        "date": "2022-08-14",
+        "predicted": 354.7,
+        "lower_20": 322.9,
+        "upper_80": 479.8
+      },
+      {
+        "date": "2022-08-15",
+        "predicted": 361.8,
+        "lower_20": 327.3,
+        "upper_80": 499.4
+      },
+      {
+        "date": "2022-08-16",
+        "predicted": 365.7,
+        "lower_20": 328.5,
+        "upper_80": 514.7
+      },
+      {
+        "date": "2022-08-17",
+        "predicted": 368.2,
+        "lower_20": 328.2,
+        "upper_80": 528.4
+      }
+    ]
+  }
+}

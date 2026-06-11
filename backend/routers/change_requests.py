@@ -36,9 +36,9 @@ def get_all_change_requests(
                 FROM change_requests cr
                 LEFT JOIN app_users u ON u.id = cr.requested_by
                 LEFT JOIN shelters s
-                    ON s.id::text = cr.record_id AND cr.table_name = 'shelters'
+                    ON cr.record_id IS NOT NULL AND s.id::text = cr.record_id::text AND cr.table_name = 'shelters'
                 LEFT JOIN lost_found_posts lf
-                    ON lf.id::text = cr.record_id AND cr.table_name = 'lost_found_posts'
+                    ON cr.record_id IS NOT NULL AND lf.id::text = cr.record_id::text AND cr.table_name = 'lost_found_posts'
                 WHERE cr.status = %s
                 ORDER BY cr.created_at DESC
                 """,
@@ -56,9 +56,9 @@ def get_all_change_requests(
                 FROM change_requests cr
                 LEFT JOIN app_users u ON u.id = cr.requested_by
                 LEFT JOIN shelters s
-                    ON s.id::text = cr.record_id AND cr.table_name = 'shelters'
+                    ON cr.record_id IS NOT NULL AND s.id::text = cr.record_id::text AND cr.table_name = 'shelters'
                 LEFT JOIN lost_found_posts lf
-                    ON lf.id::text = cr.record_id AND cr.table_name = 'lost_found_posts'
+                    ON cr.record_id IS NOT NULL AND lf.id::text = cr.record_id::text AND cr.table_name = 'lost_found_posts'
                 ORDER BY cr.created_at DESC
                 """
             )

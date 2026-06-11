@@ -30,7 +30,7 @@ const EditLostFound = () => {
 
   const handleFormChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const isFormValid = formData.post_type && formData.category && formData.name && formData.location && formData.contact;
+  const isFormValid = formData.post_type && formData.category && formData.name && formData.location && formData.contact && formData.contact.length === 11;
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -112,7 +112,10 @@ const EditLostFound = () => {
             ].map(({ label, field, placeholder }) => (
               <div key={field}>
                 <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>{label}</label>
-                <input type="text" value={formData[field]} onChange={(e) => handleFormChange(field, e.target.value)} placeholder={placeholder} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
+                <input type="text" value={formData[field]} onChange={(e) => handleFormChange(field, e.target.value)} placeholder={placeholder} maxLength={field === 'contact' ? 11 : undefined} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
+                {field === 'contact' && formData.contact && formData.contact.length !== 11 && (
+                  <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '6px', marginLeft: '8px', fontFamily: 'Inter, sans-serif' }}>Phone number must be exactly 11 digits</p>
+                )}
               </div>
             ))}
 

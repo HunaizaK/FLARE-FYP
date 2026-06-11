@@ -44,10 +44,10 @@ const SignUpForm = () => {
 
   // Pakistani phone number validation (03XX-XXXXXXX format)
   const validateContactNo = (contactNo) => {
-    const phoneRegex = /^(\+92|0)?3[0-9]{9}$/;
+    const phoneRegex = /^03[0-9]{9}$/;
     if (!contactNo) return '';
     if (!phoneRegex.test(contactNo.replace(/\s|-/g, ''))) {
-      return 'Please enter a valid Pakistani phone number (e.g., 03XX-XXXXXXX)';
+      return 'Phone number must be exactly 11 digits';
     }
     return '';
   };
@@ -320,6 +320,7 @@ const SignUpForm = () => {
                   value={formData.contact_no}
                   onChange={handleChange}
                   placeholder="+92 333 3333333"
+                  maxLength={11}
                   className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
                   style={{
                     fontFamily: 'Inter, sans-serif',

@@ -18,11 +18,20 @@ def get_shelters(current_user: dict = Depends(require_approved_user)):
     cursor = conn.cursor()
     try:
         if current_user["role"] == "admin":
-            cursor.execute("SELECT * FROM shelters ORDER BY created_at DESC")
+            cursor.execute("""
+                SELECT s.*, u.contact_no AS phone_number
+                FROM shelters s
+                LEFT JOIN app_users u ON u.id = s.added_by
+                ORDER BY s.created_at DESC
+            """)
         else:
-            cursor.execute(
-                "SELECT * FROM shelters WHERE approval_status = 'approved' ORDER BY created_at DESC"
-            )
+            cursor.execute("""
+                SELECT s.*, u.contact_no AS phone_number
+                FROM shelters s
+                LEFT JOIN app_users u ON u.id = s.added_by
+                WHERE s.approval_status = 'approved'
+                ORDER BY s.created_at DESC
+            """)
         shelters = cursor.fetchall()
         return {"success": True, "message": "Shelters retrieved successfully", "data": list(shelters)}
     except Exception as e:

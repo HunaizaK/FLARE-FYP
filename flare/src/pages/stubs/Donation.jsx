@@ -41,7 +41,7 @@ const Donation = () => {
   const handleCopyIban = (iban) => navigator.clipboard.writeText(iban);
 
   // ── Add ──
-  const isAddValid = formData.account_title && formData.account_no && formData.bank_name && formData.iban;
+  const isAddValid = formData.account_title && formData.account_no && formData.bank_name && formData.iban && formData.iban.length === 24;
   const handleAddSubmit = async () => {
     if (!isAddValid || submitting) return;
     setSubmitting(true);
@@ -71,7 +71,7 @@ const Donation = () => {
   };
 
   // ── Edit ──
-  const isEditValid = editForm.account_title && editForm.account_no && editForm.bank_name && editForm.iban;
+  const isEditValid = editForm.account_title && editForm.account_no && editForm.bank_name && editForm.iban && editForm.iban.length === 24;
   const handleEditSubmit = async () => {
     if (!isEditValid || !editTarget || submitting) return;
     setSubmitting(true);
@@ -212,7 +212,10 @@ const Donation = () => {
           {ADD_FIELDS.map(({ label, field, placeholder }) => (
             <div key={field} style={{ marginBottom: '24px' }}>
               <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>{label}</label>
-              <input type="text" value={formData[field]} onChange={(e) => setFormData((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} style={{ width: '100%', height: '40px', border: '1px solid #D1D5DB', borderRadius: '20px', padding: '0 16px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
+              <input type="text" value={formData[field]} onChange={(e) => setFormData((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} maxLength={field === 'iban' ? 24 : undefined} style={{ width: '100%', height: '40px', border: '1px solid #D1D5DB', borderRadius: '20px', padding: '0 16px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
+              {field === 'iban' && formData.iban && formData.iban.length !== 24 && (
+                <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', marginLeft: '4px', fontFamily: 'Inter, sans-serif' }}>Pakistani IBAN must be exactly 24 characters</p>
+              )}
             </div>
           ))}
           <button onClick={handleAddSubmit} disabled={!isAddValid || submitting} style={{ width: '100%', height: '52px', backgroundColor: isAddValid && !submitting ? '#b7c9dc' : '#D1D5DB', border: `2px solid ${isAddValid && !submitting ? '#b7c9dc' : '#D1D5DB'}`, color: isAddValid && !submitting ? '#000000' : '#9CA3AF', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, cursor: isAddValid && !submitting ? 'pointer' : 'not-allowed' }} onMouseEnter={(e) => { if (isAddValid && !submitting) { e.target.style.backgroundColor = '#8f9dad'; e.target.style.borderColor = '#8f9dad'; } }} onMouseLeave={(e) => { if (isAddValid && !submitting) { e.target.style.backgroundColor = '#b7c9dc'; e.target.style.borderColor = '#b7c9dc'; } }}>
@@ -234,7 +237,10 @@ const Donation = () => {
             {ADD_FIELDS.map(({ label, field, placeholder }) => (
               <div key={field} style={{ marginBottom: '24px' }}>
                 <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>{label}</label>
-                <input type="text" value={editForm[field]} onChange={(e) => setEditForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} style={{ width: '100%', height: '40px', border: '1px solid #D1D5DB', borderRadius: '20px', padding: '0 16px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
+                <input type="text" value={editForm[field]} onChange={(e) => setEditForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} maxLength={field === 'iban' ? 24 : undefined} style={{ width: '100%', height: '40px', border: '1px solid #D1D5DB', borderRadius: '20px', padding: '0 16px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
+                {field === 'iban' && editForm.iban && editForm.iban.length !== 24 && (
+                  <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', marginLeft: '4px', fontFamily: 'Inter, sans-serif' }}>Pakistani IBAN must be exactly 24 characters</p>
+                )}
               </div>
             ))}
             <button onClick={handleEditSubmit} disabled={!isEditValid || submitting} style={{ width: '100%', height: '52px', backgroundColor: isEditValid && !submitting ? '#b7c9dc' : '#D1D5DB', border: `2px solid ${isEditValid && !submitting ? '#b7c9dc' : '#D1D5DB'}`, color: isEditValid && !submitting ? '#000000' : '#9CA3AF', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, cursor: isEditValid && !submitting ? 'pointer' : 'not-allowed' }} onMouseEnter={(e) => { if (isEditValid && !submitting) { e.target.style.backgroundColor = '#8f9dad'; e.target.style.borderColor = '#8f9dad'; } }} onMouseLeave={(e) => { if (isEditValid && !submitting) { e.target.style.backgroundColor = '#b7c9dc'; e.target.style.borderColor = '#b7c9dc'; } }}>

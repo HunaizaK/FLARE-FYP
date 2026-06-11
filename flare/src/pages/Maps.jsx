@@ -861,6 +861,7 @@ const Maps = () => {
                     type="text"
                     value={editForm.phone}
                     onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                    maxLength={11}
                     style={{
                       width: '100%', height: '38px', border: '1px solid #D1D5DB', borderRadius: '12px',
                       padding: '0 12px', fontFamily: 'Inter, sans-serif', fontSize: '14px', outline: 'none', boxSizing: 'border-box',

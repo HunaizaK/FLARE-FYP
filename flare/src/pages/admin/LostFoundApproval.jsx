@@ -14,6 +14,7 @@ const COLUMNS = [
   { key: 'reportedBy',  label: 'Reported By' },
   { key: 'memberSince', label: 'Member Since' },
   { key: 'phone',       label: 'Phone Number' },
+  { key: 'location',    label: 'Location' },
 ];
 
 const LFTable = ({ title, rows, onAccept, onReject }) => {
@@ -82,6 +83,7 @@ const LFTable = ({ title, rows, onAccept, onReject }) => {
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.reportedBy}</td>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', whiteSpace: 'nowrap' }}>{row.memberSince}</td>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937', whiteSpace: 'nowrap' }}>{row.phone}</td>
+                <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.location}</td>
                 <td style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button onClick={() => onAccept(row.id)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px', backgroundColor: '#b7c9dc', border: '2px solid #b7c9dc', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#8f9dad'; e.currentTarget.style.borderColor = '#8f9dad'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#b7c9dc'; e.currentTarget.style.borderColor = '#b7c9dc'; }}>
@@ -111,6 +113,7 @@ const mapRow = (r) => ({
   reportedBy:  r.username           || '—',
   memberSince: r.created_at ? new Date(r.created_at).getFullYear().toString() : '—',
   phone:       r.contact_no         || '—',
+  location:    r.payload?.location  || '—',
 });
 
 const LostFoundApproval = () => {

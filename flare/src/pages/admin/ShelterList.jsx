@@ -9,9 +9,10 @@ import {
 import api from '../../services/api';
 
 const COLUMNS = [
-  { key: 'shelter_name', label: 'Shelter Name' },
-  { key: 'location',     label: 'Location' },
-  { key: 'capacity',     label: 'Capacity' },
+  { key: 'shelter_name',  label: 'Shelter Name' },
+  { key: 'location',      label: 'Location' },
+  { key: 'capacity',      label: 'Capacity' },
+  { key: 'phone_number',  label: 'Phone Number' },
 ];
 
 const ShelterList = () => {
@@ -93,12 +94,13 @@ const ShelterList = () => {
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={3} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No approved shelters yet'}</td></tr>
+                  <tr><td colSpan={4} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No approved shelters yet'}</td></tr>
                 ) : rows.map((row, index) => (
                   <tr key={row.id} style={{ borderBottom: index < rows.length - 1 ? '1px solid #F3F4F6' : 'none', transition: 'background-color 0.15s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fafbfc')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                     <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.shelter_name}</td>
                     <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.location || '—'}</td>
                     <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.capacity ?? '—'}</td>
+                    <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937', whiteSpace: 'nowrap' }}>{row.phone_number || '—'}</td>
                   </tr>
                 ))}
               </tbody>

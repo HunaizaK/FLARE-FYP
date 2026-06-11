@@ -56,12 +56,13 @@ const Field = ({ label, children }) => (
   </div>
 );
 
-const TextInput = ({ value, onChange, placeholder, type = 'text' }) => (
+const TextInput = ({ value, onChange, placeholder, type = 'text', maxLength }) => (
   <input
     type={type}
     value={value}
     onChange={onChange}
     placeholder={placeholder}
+    maxLength={maxLength}
     style={{
       width: '100%', height: '44px', borderRadius: '10px',
       border: '1px solid #D1D5DB', padding: '0 14px',
@@ -182,8 +183,8 @@ const Settings = () => {
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(profile.email)) { setProfileError('Enter a valid email address.'); return; }
-    const phoneRegex = /^(\+92|0)?3[0-9]{9}$/;
-    if (!phoneRegex.test(profile.contactNo.replace(/\s|-/g, ''))) { setProfileError('Enter a valid Pakistani phone number.'); return; }
+    const phoneRegex = /^03[0-9]{9}$/;
+    if (!phoneRegex.test(profile.contactNo.replace(/\s|-/g, ''))) { setProfileError('Phone number must be exactly 11 digits'); return; }
 
     saveAccounts(accounts.map((a) =>
       a.userName === currentUser
@@ -261,7 +262,7 @@ const Settings = () => {
                 <TextInput value={profile.email} placeholder="Email" onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
               </Field>
               <Field label="Phone Number">
-                <TextInput value={profile.contactNo} placeholder="03XX-XXXXXXX" onChange={(e) => setProfile({ ...profile, contactNo: e.target.value })} />
+                <TextInput value={profile.contactNo} placeholder="03XX-XXXXXXX" maxLength={11} onChange={(e) => setProfile({ ...profile, contactNo: e.target.value })} />
               </Field>
             </div>
             <SaveButton onClick={handleProfileSave} />

@@ -45,3 +45,8 @@ ml/models/*.pkl
 ml/outputs/
 ml/data/discharge/
 ml/data/rainfall/
+# Flood API
+flood_api/flood_models/
+flood_api/outputs/
+flood_api/__pycache__/
+flood_api/*.pyc

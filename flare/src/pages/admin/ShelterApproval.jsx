@@ -63,6 +63,8 @@ const ShelterTable = ({ title, rows, onAccept, onReject }) => {
                 { key: 'submittedBy',  label: 'Submitted By' },
                 { key: 'shelter_name', label: 'Shelter Name' },
                 { key: 'capacity',     label: 'Capacity' },
+                { key: 'phone_number', label: 'Phone Number' },
+                { key: 'location',     label: 'Location' },
               ].map((col) => (
                 <th key={col.key} onClick={() => handleSort(col.key)} style={{ padding: '14px 20px', textAlign: 'left', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#6B7280', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{col.label}<SortIcon field={col.key} /></div>
@@ -73,12 +75,14 @@ const ShelterTable = ({ title, rows, onAccept, onReject }) => {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No pending requests'}</td></tr>
+              <tr><td colSpan={6} style={{ padding: '56px', textAlign: 'center', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>{searchQuery ? 'No results match your search' : 'No pending requests'}</td></tr>
             ) : filtered.map((row, index) => (
               <tr key={row.id} style={{ borderBottom: index < filtered.length - 1 ? '1px solid #F3F4F6' : 'none', transition: 'background-color 0.15s' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fafbfc')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.submittedBy}</td>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.shelter_name}</td>
                 <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937', whiteSpace: 'nowrap' }}>{row.capacity}</td>
+                <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937', whiteSpace: 'nowrap' }}>{row.phone_number}</td>
+                <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>{row.location}</td>
                 <td style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button onClick={() => onAccept(row.id)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px', backgroundColor: '#b7c9dc', border: '2px solid #b7c9dc', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#8f9dad'; e.currentTarget.style.borderColor = '#8f9dad'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#b7c9dc'; e.currentTarget.style.borderColor = '#b7c9dc'; }}>
@@ -106,6 +110,8 @@ const mapRow = (r) => ({
   submittedBy:  r.username                   || '—',
   shelter_name: r.payload?.shelter_name      || '—',
   capacity:     r.payload?.capacity          ?? '—',
+  phone_number: r.contact_no                 || '—',
+  location:     r.payload?.location          || '—',
 });
 
 const ShelterApproval = () => {

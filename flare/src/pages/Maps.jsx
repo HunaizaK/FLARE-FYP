@@ -35,7 +35,7 @@ function FloodOverlayLayer({ enabled, apiBase = "http://localhost:8002" }) {
 
   return null;
 }
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import L from 'leaflet';
 import LayersOutlined from "@mui/icons-material/LayersOutlined";
 import {
@@ -47,7 +47,7 @@ import { IoWaterOutline, IoHomeOutline } from 'react-icons/io5';
 import { MdOutlineHistory } from 'react-icons/md';
 import { FaEarthAmericas } from 'react-icons/fa6';
 import Navbar from '../components/Navbar';
-import { editShelter, requestDeleteShelter, syncFromStorage } from '../features/shelters/sheltersSlice';
+import api from '../services/api';
 
 
 // Fix Leaflet default marker icon issue
@@ -66,12 +66,24 @@ const center = {
 
 const Maps = () => {
   const [flyTarget, setFlyTarget] = useState(null);
-  const dispatch = useDispatch();
-  const shelters = useSelector((state) => state.shelters.shelters);
+  const [shelters, setShelters] = useState([]);
   const accountType = useSelector((state) => state.auth.accountType);
   const currentUser = useSelector((state) => state.auth.user);
 
-  useEffect(() => { dispatch(syncFromStorage()); }, [dispatch]);
+  useEffect(() => {
+    api.get('/shelters')
+      .then((res) => {
+        const mapped = res.data.data.map((s) => ({
+          ...s,
+          lat:   parseFloat(s.latitude),
+          lng:   parseFloat(s.longitude),
+          name:  s.shelter_name,
+          phone: s.phone_number || null,
+        }));
+        setShelters(mapped);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('http://localhost:8001/api/gauges')
@@ -761,30 +773,85 @@ const Maps = () => {
                   html: `<div style="background-color: #222ba8; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>`,
                   iconSize: [32, 32],
                   iconAnchor: [16, 32],
+                  popupAnchor: [0, -36],
                 })}
                 eventHandlers={{ click: () => { setSelectedShelter(shelter); setEditMode(false); } }}
-              />
+              >
+                <Popup minWidth={260} maxWidth={320}>
+                  <div style={{ fontFamily: 'Inter, sans-serif', padding: '4px 2px' }}>
+                    <div style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 600, color: '#000000', marginBottom: '12px' }}>Shelter Info</div>
+
+                    {!(selectedShelter?.id === shelter.id && editMode) ? (
+                      <>
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Name</span>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#000000' }}>{shelter.name}</span>
+                        </div>
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Capacity</span>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#000000' }}>{shelter.capacity ?? 'N/A'}</span>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '2px' }}>Phone</span>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#000000' }}>{shelter.phone || 'N/A'}</span>
+                        </div>
+                        {accountType === 'organization' && String(shelter.added_by) === String(shelter.added_by) && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={() => { setSelectedShelter(shelter); setEditMode(true); setEditForm({ name: shelter.name, phone: shelter.phone || '' }); }}
+                              style={{ flex: 1, height: '32px', backgroundColor: '#b7c9dc', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer' }}>
+                              Edit
+                            </button>
+                            <button onClick={async () => {
+                              try {
+                                await api.delete(`/shelters/request/${shelter.id}`);
+                                setSelectedShelter(null);
+                                setShowDeleteToast(true);
+                                setTimeout(() => setShowDeleteToast(false), 3000);
+                              } catch (err) { alert(err.response?.data?.detail || 'Failed to submit delete request.'); }
+                            }}
+                              style={{ flex: 1, height: '32px', backgroundColor: '#FFFFFF', border: '2px solid #F87171', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#EF4444', cursor: 'pointer' }}>
+                              Request Delete
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Name</label>
+                          <input type="text" value={editForm.name} onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                            style={{ width: '100%', height: '34px', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '0 10px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Phone</label>
+                          <input type="text" value={editForm.phone} onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))} maxLength={11}
+                            style={{ width: '100%', height: '34px', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '0 10px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={async () => {
+                            if (editForm.name.trim()) {
+                              try {
+                                await api.put(`/shelters/request/${shelter.id}`, { shelter_name: editForm.name.trim(), location: shelter.location, capacity: shelter.capacity, latitude: shelter.lat, longitude: shelter.lng });
+                                setEditMode(false); setSelectedShelter(null);
+                                setShowDeleteToast('edit'); setTimeout(() => setShowDeleteToast(false), 3000);
+                              } catch (err) { alert(err.response?.data?.detail || 'Failed to submit edit request.'); }
+                            }
+                          }} style={{ flex: 1, height: '32px', backgroundColor: '#b7c9dc', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#000000', cursor: 'pointer' }}>Save</button>
+                          <button onClick={() => setEditMode(false)}
+                            style={{ flex: 1, height: '32px', backgroundColor: '#FFFFFF', border: '2px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', fontWeight: 500, color: '#6B7280', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
         </div>
 
-        {/* Shelter Info Overlay */}
-        {selectedShelter && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              backgroundColor: '#FFFFFF',
-              borderRadius: '20px',
-              padding: '20px 24px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-              zIndex: 1001,
-              width: editMode ? '380px' : '300px',
-              transition: 'width 0.2s ease',
-            }}
-          >
+        {/* Shelter Info Overlay — replaced by Leaflet Popup on each marker */}
+        {false && (
+          <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#000000', margin: 0 }}>
                 Shelter Info
@@ -822,11 +889,15 @@ const Maps = () => {
                       Edit
                     </button>
                     <button
-                      onClick={() => {
-                        dispatch(requestDeleteShelter(selectedShelter));
-                        setSelectedShelter(null);
-                        setShowDeleteToast(true);
-                        setTimeout(() => setShowDeleteToast(false), 3000);
+                      onClick={async () => {
+                        try {
+                          await api.delete(`/shelters/request/${selectedShelter.id}`);
+                          setSelectedShelter(null);
+                          setShowDeleteToast(true);
+                          setTimeout(() => setShowDeleteToast(false), 3000);
+                        } catch (err) {
+                          alert(err.response?.data?.detail || 'Failed to submit delete request.');
+                        }
                       }}
                       style={{
                         flex: 1, height: '36px', backgroundColor: '#FFFFFF', border: '2px solid #F87171',
@@ -870,11 +941,23 @@ const Maps = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (editForm.name.trim()) {
-                        dispatch(editShelter({ id: selectedShelter.id, name: editForm.name.trim(), phone: editForm.phone.trim() }));
-                        setEditMode(false);
-                        setSelectedShelter(null);
+                        try {
+                          await api.put(`/shelters/request/${selectedShelter.id}`, {
+                            shelter_name: editForm.name.trim(),
+                            location:     selectedShelter.location,
+                            capacity:     selectedShelter.capacity,
+                            latitude:     selectedShelter.lat,
+                            longitude:    selectedShelter.lng,
+                          });
+                          setEditMode(false);
+                          setSelectedShelter(null);
+                          setShowDeleteToast('edit');
+                          setTimeout(() => setShowDeleteToast(false), 3000);
+                        } catch (err) {
+                          alert(err.response?.data?.detail || 'Failed to submit edit request.');
+                        }
                       }
                     }}
                     style={{

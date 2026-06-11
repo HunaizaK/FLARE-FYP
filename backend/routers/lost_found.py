@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+import base64
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Form, File, UploadFile
 from psycopg2.extras import Json
 from database import get_db
 from dependencies import require_approved_user
-from schemas.lost_found import LostFoundCreate
 
 router = APIRouter(prefix="/lost-found", tags=["Lost & Found"])
 
@@ -45,18 +46,36 @@ def get_posts(current_user: dict = Depends(require_approved_user)):
 
 
 @router.post("/request", status_code=201)
-def submit_add_request(data: LostFoundCreate, current_user: dict = Depends(require_approved_user)):
+def submit_add_request(
+    category:        str            = Form(...),
+    location:        str            = Form(...),
+    contact:         str            = Form(...),
+    name:            str            = Form(...),
+    additional_info: Optional[str]  = Form(None),
+    image:           Optional[UploadFile] = File(None),
+    current_user:    dict           = Depends(require_approved_user),
+):
     """
     Submit a change request to add a new lost/found post.
     Available to citizens and approved organizations.
-    The post is not created directly — admin must approve the request.
+    Accepts multipart/form-data so an optional image can be included.
     """
     conn = get_db()
     cursor = conn.cursor()
     try:
-        payload = data.dict()
-        payload["post_type"] = "lost"
-        payload["user_id"] = current_user["user_id"]
+        payload = {
+            "category":        category,
+            "location":        location,
+            "contact":         contact,
+            "name":            name,
+            "additional_info": additional_info,
+            "post_type":       "lost",
+            "user_id":         current_user["user_id"],
+        }
+
+        if image and image.filename:
+            payload["image"] = base64.b64encode(image.file.read()).decode("utf-8")
+            payload["image_content_type"] = image.content_type
 
         cursor.execute(
             """
@@ -83,15 +102,19 @@ def submit_add_request(data: LostFoundCreate, current_user: dict = Depends(requi
 
 @router.put("/request/{post_id}", status_code=201)
 def submit_edit_request(
-    post_id: str,
-    data: LostFoundCreate,
-    current_user: dict = Depends(require_approved_user)
+    post_id:         str,
+    category:        str            = Form(...),
+    location:        str            = Form(...),
+    contact:         str            = Form(...),
+    name:            str            = Form(...),
+    additional_info: Optional[str]  = Form(None),
+    image:           Optional[UploadFile] = File(None),
+    current_user:    dict           = Depends(require_approved_user),
 ):
     """
     Submit a change request to edit an existing lost/found post.
     - User must own the post.
-    - Full schema required (no partial updates — the entire record is replaced on approval).
-    - Returns 404 if post not found, 403 if not owner, 409 if a pending request already exists.
+    - Accepts multipart/form-data; image is optional (omit to keep existing image).
     """
     conn = get_db()
     cursor = conn.cursor()
@@ -116,8 +139,19 @@ def submit_edit_request(
         if cursor.fetchone():
             raise HTTPException(status_code=409, detail="A pending request already exists for this post")
 
-        payload = data.dict()
-        payload["post_type"] = "lost"
+        payload = {
+            "category":        category,
+            "location":        location,
+            "contact":         contact,
+            "name":            name,
+            "additional_info": additional_info,
+            "post_type":       "lost",
+        }
+
+        if image and image.filename:
+            payload["image"] = base64.b64encode(image.file.read()).decode("utf-8")
+            payload["image_content_type"] = image.content_type
+
         cursor.execute(
             """
             INSERT INTO change_requests

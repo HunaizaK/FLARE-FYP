@@ -1,5 +1,7 @@
+import base64
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
+import psycopg2
 from database import get_db
 from dependencies import require_admin, require_approved_user
 
@@ -196,12 +198,15 @@ def reject_change_request(request_id: str, current_user: dict = Depends(require_
 def _execute_add(cursor, table_name: str, payload: dict, admin_id: str):
     """Insert a new row into the target table from the change_request payload."""
     if table_name == "lost_found_posts":
+        image_bytes = None
+        if payload.get("image"):
+            image_bytes = psycopg2.Binary(base64.b64decode(payload["image"]))
         cursor.execute(
             """
             INSERT INTO lost_found_posts
                 (user_id, category, location, contact, name, post_type,
-                 additional_info, approval_status, approved_by, approved_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'approved', %s, NOW())
+                 additional_info, image, approval_status, approved_by, approved_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'approved', %s, NOW())
             """,
             (
                 payload["user_id"],
@@ -211,6 +216,7 @@ def _execute_add(cursor, table_name: str, payload: dict, admin_id: str):
                 payload["name"],
                 payload["post_type"],
                 payload.get("additional_info"),
+                image_bytes,
                 admin_id,
             )
         )
@@ -253,23 +259,46 @@ def _execute_add(cursor, table_name: str, payload: dict, admin_id: str):
 def _execute_edit(cursor, table_name: str, record_id: str, payload: dict):
     """Update an existing row in the target table using the full payload."""
     if table_name == "lost_found_posts":
-        cursor.execute(
-            """
-            UPDATE lost_found_posts
-            SET category = %s, location = %s, contact = %s,
-                name = %s, post_type = %s, additional_info = %s
-            WHERE id = %s
-            """,
-            (
-                payload["category"],
-                payload["location"],
-                payload["contact"],
-                payload["name"],
-                payload["post_type"],
-                payload.get("additional_info"),
-                record_id,
+        if payload.get("image"):
+            # New image provided — update all fields including image
+            image_bytes = psycopg2.Binary(base64.b64decode(payload["image"]))
+            cursor.execute(
+                """
+                UPDATE lost_found_posts
+                SET category = %s, location = %s, contact = %s,
+                    name = %s, post_type = %s, additional_info = %s, image = %s
+                WHERE id = %s
+                """,
+                (
+                    payload["category"],
+                    payload["location"],
+                    payload["contact"],
+                    payload["name"],
+                    payload["post_type"],
+                    payload.get("additional_info"),
+                    image_bytes,
+                    record_id,
+                )
             )
-        )
+        else:
+            # No new image — leave existing image unchanged
+            cursor.execute(
+                """
+                UPDATE lost_found_posts
+                SET category = %s, location = %s, contact = %s,
+                    name = %s, post_type = %s, additional_info = %s
+                WHERE id = %s
+                """,
+                (
+                    payload["category"],
+                    payload["location"],
+                    payload["contact"],
+                    payload["name"],
+                    payload["post_type"],
+                    payload.get("additional_info"),
+                    record_id,
+                )
+            )
 
     elif table_name == "shelters":
         cursor.execute(

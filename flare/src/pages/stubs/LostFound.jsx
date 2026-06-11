@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Navbar from '../../components/Navbar';
+import PhoneInput from '../../components/PhoneInput';
 import {
   ImageOutlined, ContentCopyOutlined, CloseOutlined,
   SearchOutlined, LocationOn, Phone, MoreVertOutlined,
@@ -82,7 +83,7 @@ const LostFound = () => {
   const handleReportLost  = () => { setShowReportForm(true); setSelectedItem(null); };
   const handleBackToList  = () => { setSelectedItem(null); setShowReportForm(false); };
   const handleFormChange  = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
-  const handleCopyContact = (contact) => navigator.clipboard.writeText(contact);
+  const handleCopyContact = (contact) => navigator.clipboard.writeText(`+92 ${contact}`);
 
   const handleEditRequest = (item) => {
     setOpenMenuId(null); setShowDetailMenu(false);
@@ -107,7 +108,7 @@ const LostFound = () => {
     }
   };
 
-  const isFormValid = formData.post_type && formData.category && formData.name && formData.location && formData.contact && formData.contact.length === 11;
+  const isFormValid = formData.post_type && formData.category && formData.name && formData.location && formData.contact && formData.contact.length === 10;
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -268,7 +269,7 @@ const LostFound = () => {
                       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}><LocationOn style={{ fontSize: '16px' }} /> {item.location}</p>
                       {item.additional_info && <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#9CA3AF', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{item.additional_info}</p>}
                       <button onClick={(e) => { e.stopPropagation(); handleCopyContact(item.contact); }} className="bg-[#b7c9dc] hover:bg-[#8f9dad] text-black font-medium transition-colors duration-200" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', width: '100%', height: '40px', borderRadius: '8px', border: 'none', outline: 'none', cursor: 'pointer', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                        <Phone style={{ fontSize: '16px' }} /> {item.contact}
+                        <Phone style={{ fontSize: '16px' }} /> +92 {item.contact}
                       </button>
                     </div>
                   </div>
@@ -310,9 +311,9 @@ const LostFound = () => {
             <div style={{ maxWidth: '1400px', width: '100%' }}>
               <div className="flex" style={{ gap: '40px' }}>
                 <div>
-                  <div style={{ width: '400px', height: '300px', backgroundColor: '#E5E7EB', border: '1px solid #D1D5DB', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <div style={{ width: '400px', height: '420px', backgroundColor: '#E5E7EB', border: '1px solid #D1D5DB', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                     {selectedItem.image
-                      ? <img src={getImageSrc(selectedItem.image)} alt={selectedItem.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ? <img src={getImageSrc(selectedItem.image)} alt={selectedItem.name} style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#F3F4F6' }} />
                       : <ImageOutlined style={{ fontSize: '80px', color: '#9CA3AF' }} />}
                   </div>
                 </div>
@@ -323,8 +324,9 @@ const LostFound = () => {
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', marginBottom: '4px' }}>Member since</p>
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '18px', fontWeight: 600, color: '#000000' }}>{selectedItem.memberSince}</p>
                   </div>
-                  <button onClick={() => handleCopyContact(selectedItem.contact)} className="bg-[#b7c9dc] hover:bg-[#8f9dad] text-black font-medium transition-colors duration-200" style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', width: '100%', height: '52px', borderRadius: '12px', border: 'none', outline: 'none', cursor: 'pointer', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <Phone style={{ fontSize: '18px' }} /> {selectedItem.contact} <ContentCopyOutlined style={{ fontSize: '18px' }} />
+                  <button onClick={() => handleCopyContact(selectedItem.contact)} className="bg-[#b7c9dc] hover:bg-[#8f9dad] text-black font-medium transition-colors duration-200" style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', width: '100%', height: '52px', borderRadius: '12px', border: 'none', outline: 'none', cursor: 'pointer', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone style={{ fontSize: '18px' }} /> +92 {selectedItem.contact}</span>
+                    <div style={{ position: 'absolute', right: '16px' }}><ContentCopyOutlined style={{ fontSize: '18px' }} /></div>
                   </button>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
@@ -386,30 +388,34 @@ const LostFound = () => {
               {[
                 { label: 'Name *',                   field: 'name',            placeholder: 'Enter name' },
                 { label: 'Location *',               field: 'location',        placeholder: 'Qasim Bagh, Multan' },
-                { label: 'Contact *',                field: 'contact',         placeholder: '+92 333 3333333' },
                 { label: 'Additional Info (if any)', field: 'additional_info', placeholder: 'Wearing blue shirt' },
               ].map(({ label, field, placeholder }) => (
                 <div key={field}>
                   <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>{label}</label>
-                  <input type={field === 'contact' ? 'tel' : 'text'} value={formData[field]} onChange={(e) => {
-                    let value = e.target.value;
-                    if (field === 'contact') {
-                      value = value.replace(/[^0-9+]/g, '');
-                    }
-                    handleFormChange(field, value);
-                  }} placeholder={placeholder} maxLength={field === 'contact' ? 14 : undefined} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
-                  {field === 'contact' && formData.contact && formData.contact.length !== 11 && (
-                    <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '6px', marginLeft: '8px', fontFamily: 'Inter, sans-serif' }}>Phone number must be exactly 11 digits</p>
-                  )}
+                  <input type="text" value={formData[field]} onChange={(e) => handleFormChange(field, e.target.value)} placeholder={placeholder} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
                 </div>
               ))}
+
+              {/* Contact Input with Phone Prefix */}
+              <div>
+                <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Contact *</label>
+                <PhoneInput
+                  value={formData.contact}
+                  onChange={(value) => handleFormChange('contact', value)}
+                  placeholder="333 3333333"
+                  maxLength={10}
+                />
+                {formData.contact && formData.contact.length !== 10 && (
+                  <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '6px', marginLeft: '8px', fontFamily: 'Inter, sans-serif' }}>Phone number must be 10 digits</p>
+                )}
+              </div>
 
               {/* Image Upload */}
               <div>
                 <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Image (optional)</label>
                 {imagePreview && (
-                  <div style={{ marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', width: '100%', height: '200px', backgroundColor: '#E5E7EB' }}>
-                    <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', width: '300px', height: '300px', backgroundColor: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto' }}>
+                    <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#F3F4F6' }} />
                   </div>
                 )}
                 <label style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '48px', border: '1px dashed #D1D5DB', borderRadius: '30px', padding: '0 20px', cursor: 'pointer', backgroundColor: '#FAFAFA' }}>

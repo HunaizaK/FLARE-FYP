@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Navbar from '../../components/Navbar';
+import PhoneInput from '../../components/PhoneInput';
 import { ImageOutlined } from '@mui/icons-material';
 import api from '../../services/api';
 
@@ -33,7 +34,7 @@ const EditLostFound = () => {
 
   const handleFormChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const isFormValid = formData.post_type && formData.category && formData.name && formData.location && formData.contact && formData.contact.length === 11;
+  const isFormValid = formData.post_type && formData.category && formData.name && formData.location && formData.contact && formData.contact.length === 10;
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -98,30 +99,34 @@ const EditLostFound = () => {
             {[
               { label: 'Name *',                   field: 'name',            placeholder: 'Enter name' },
               { label: 'Location *',               field: 'location',        placeholder: 'Qasim Bagh, Multan' },
-              { label: 'Contact *',                field: 'contact',         placeholder: '+92 333 3333333' },
               { label: 'Additional Info (if any)', field: 'additional_info', placeholder: 'Wearing blue shirt' },
             ].map(({ label, field, placeholder }) => (
               <div key={field}>
                 <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>{label}</label>
-                <input type={field === 'contact' ? 'tel' : 'text'} value={formData[field]} onChange={(e) => {
-                  let value = e.target.value;
-                  if (field === 'contact') {
-                    value = value.replace(/[^0-9+]/g, '');
-                  }
-                  handleFormChange(field, value);
-                }} placeholder={placeholder} maxLength={field === 'contact' ? 14 : undefined} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
-                {field === 'contact' && formData.contact && formData.contact.length !== 11 && (
-                  <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '6px', marginLeft: '8px', fontFamily: 'Inter, sans-serif' }}>Phone number must be exactly 11 digits</p>
-                )}
+                <input type="text" value={formData[field]} onChange={(e) => handleFormChange(field, e.target.value)} placeholder={placeholder} style={{ width: '100%', height: '48px', border: '1px solid #D1D5DB', borderRadius: '30px', padding: '0 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', outline: 'none' }} />
               </div>
             ))}
+
+            {/* Contact Input with Phone Prefix */}
+            <div>
+              <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Contact *</label>
+              <PhoneInput
+                value={formData.contact}
+                onChange={(value) => handleFormChange('contact', value)}
+                placeholder="333 3333333"
+                maxLength={10}
+              />
+              {formData.contact && formData.contact.length !== 10 && (
+                <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '6px', marginLeft: '8px', fontFamily: 'Inter, sans-serif' }}>Phone number must be 10 digits</p>
+              )}
+            </div>
 
             {/* Image Upload */}
             <div>
               <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500, color: '#000000', marginBottom: '8px', display: 'block' }}>Image (optional)</label>
               {imagePreview && (
-                <div style={{ marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', width: '100%', height: '200px', backgroundColor: '#E5E7EB' }}>
-                  <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', width: '300px', height: '300px', backgroundColor: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto' }}>
+                  <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#F3F4F6' }} />
                 </div>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '48px', border: '1px dashed #D1D5DB', borderRadius: '30px', padding: '0 20px', cursor: 'pointer', backgroundColor: '#FAFAFA' }}>

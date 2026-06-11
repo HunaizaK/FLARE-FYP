@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { initFloodOverlay } from '../flood-overlay';
+import PhoneInput from '../components/PhoneInput';
 
 const FlyToHandler = ({ target }) => {
   const map = useMap();
@@ -756,8 +757,13 @@ const Maps = () => {
                         </div>
                         <div style={{ marginBottom: '12px' }}>
                           <label style={{ fontSize: '12px', fontWeight: 500, color: '#000000', marginBottom: '4px', display: 'block' }}>Phone</label>
-                          <input type="tel" value={editForm.phone} onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value.replace(/[^0-9+]/g, '') }))} maxLength={14}
-                            style={{ width: '100%', height: '34px', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '0 10px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                          <PhoneInput
+                            value={editForm.phone}
+                            onChange={(value) => setEditForm(prev => ({ ...prev, phone: value }))}
+                            placeholder="333 3333333"
+                            maxLength={10}
+                            style={{ height: '34px' }}
+                          />
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button onClick={async () => {

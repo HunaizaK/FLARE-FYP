@@ -8,6 +8,7 @@ import {
   UnfoldMoreOutlined,
 } from '@mui/icons-material';
 import Navbar from '../../components/Navbar';
+import PhoneInput from '../../components/PhoneInput';
 import { setUser, logout } from '../../features/auth/authSlice';
 import api from '../../services/api';
 
@@ -395,10 +396,12 @@ const Settings = () => {
                 <TextInput value={profile.email} placeholder="Email" onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
               </Field>
               <Field label="Phone Number">
-                <TextInput value={profile.contactNo} placeholder="03XX-XXXXXXX" maxLength={14} onChange={(e) => {
-                  const sanitized = e.target.value.replace(/[^0-9+]/g, '');
-                  setProfile({ ...profile, contactNo: sanitized });
-                }} />
+                <PhoneInput
+                  value={profile.contactNo}
+                  onChange={(value) => setProfile({ ...profile, contactNo: value })}
+                  placeholder="333 3333333"
+                  maxLength={10}
+                />
               </Field>
             </div>
             <SaveButton onClick={handleProfileSave} />

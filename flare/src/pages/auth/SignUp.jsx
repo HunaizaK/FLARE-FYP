@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import api from '../../services/api';
+import PhoneInput from '../../components/PhoneInput';
 
 const SignUpForm = () => {
   const navigate = useNavigate();
@@ -42,17 +43,14 @@ const SignUpForm = () => {
     return '';
   };
 
-  // Helper: Allow only digits and + symbol
-  const sanitizePhoneInput = (value) => {
-    return value.replace(/[^0-9+]/g, '');
-  };
-
-  // Pakistani phone number validation (03XX-XXXXXXX format)
+  // Pakistani phone number validation (10 digits after +92)
   const validateContactNo = (contactNo) => {
-    const phoneRegex = /^03[0-9]{9}$/;
     if (!contactNo) return '';
-    if (!phoneRegex.test(contactNo.replace(/\s|-/g, ''))) {
-      return 'Phone number must be exactly 11 digits';
+    if (contactNo.length !== 10) {
+      return 'Phone number must be 10 digits';
+    }
+    if (!/^\d{10}$/.test(contactNo)) {
+      return 'Phone number must contain only digits';
     }
     return '';
   };
@@ -105,9 +103,7 @@ const SignUpForm = () => {
         error = validateEmail(value);
         break;
       case 'contact_no':
-        const sanitized = sanitizePhoneInput(value);
-        setFormData(prev => ({ ...prev, contact_no: sanitized }));
-        error = validateContactNo(sanitized);
+        error = validateContactNo(value);
         break;
       case 'password':
         error = validatePassword(value);
@@ -321,24 +317,18 @@ const SignUpForm = () => {
                 >
                   Contact No.
                 </label>
-                <input
-                  type="tel"
-                  name="contact_no"
+                <PhoneInput
                   value={formData.contact_no}
-                  onChange={handleChange}
-                  placeholder="+92 333 3333333"
-                  maxLength={11}
-                  className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    height: '48px',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '20px',
-                    padding: '0 16px',
-                    boxSizing: 'border-box',
+                  onChange={(value) => {
+                    setFormData(prev => ({ ...prev, contact_no: value }));
+                    setErrors(prev => ({ ...prev, contact_no: validateContactNo(value) }));
                   }}
-                  required
+                  placeholder="333 3333333"
+                  maxLength={10}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    border: `1px solid ${errors.contact_no ? '#EF4444' : '#E5E7EB'}`,
+                  }}
                 />
                 {errors.contact_no && (
                   <p style={{ color: '#EF4444', fontSize: '13px', marginTop: '4px', fontFamily: 'Inter, sans-serif' }}>

@@ -27,9 +27,18 @@ def get_all_change_requests(
         if status:
             cursor.execute(
                 """
-                SELECT cr.*, u.username, u.contact_no
+                SELECT cr.*, u.username, u.contact_no,
+                    s.location     AS shelter_location,
+                    s.shelter_name AS shelter_name_db,
+                    lf.location    AS lf_location,
+                    lf.name        AS lf_name,
+                    lf.category    AS lf_category
                 FROM change_requests cr
                 LEFT JOIN app_users u ON u.id = cr.requested_by
+                LEFT JOIN shelters s
+                    ON s.id::text = cr.record_id AND cr.table_name = 'shelters'
+                LEFT JOIN lost_found_posts lf
+                    ON lf.id::text = cr.record_id AND cr.table_name = 'lost_found_posts'
                 WHERE cr.status = %s
                 ORDER BY cr.created_at DESC
                 """,
@@ -38,9 +47,18 @@ def get_all_change_requests(
         else:
             cursor.execute(
                 """
-                SELECT cr.*, u.username, u.contact_no
+                SELECT cr.*, u.username, u.contact_no,
+                    s.location     AS shelter_location,
+                    s.shelter_name AS shelter_name_db,
+                    lf.location    AS lf_location,
+                    lf.name        AS lf_name,
+                    lf.category    AS lf_category
                 FROM change_requests cr
                 LEFT JOIN app_users u ON u.id = cr.requested_by
+                LEFT JOIN shelters s
+                    ON s.id::text = cr.record_id AND cr.table_name = 'shelters'
+                LEFT JOIN lost_found_posts lf
+                    ON lf.id::text = cr.record_id AND cr.table_name = 'lost_found_posts'
                 ORDER BY cr.created_at DESC
                 """
             )

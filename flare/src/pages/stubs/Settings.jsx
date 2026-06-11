@@ -355,6 +355,32 @@ const Settings = () => {
     saveNotifPrefs(currentUser, updated);
   };
 
+  // ── newsletter ──
+  const [newsletterOn, setNewsletterOn] = useState(
+    localStorage.getItem('floodUpdatesPreference') === 'yes'
+  );
+  const [showNewsletterPopup, setShowNewsletterPopup] = useState(false);
+
+  const handleNewsletterToggle = () => {
+    if (!newsletterOn) {
+      const pending = JSON.parse(localStorage.getItem('flare_pending_newsletters') || '[]');
+      if (!pending.some((r) => r.username === currentUser)) {
+        pending.push({ id: Date.now(), username: currentUser, submittedAt: new Date().toISOString() });
+        localStorage.setItem('flare_pending_newsletters', JSON.stringify(pending));
+      }
+      localStorage.setItem('floodUpdatesPreference', 'yes');
+      setNewsletterOn(true);
+      setShowNewsletterPopup(true);
+    } else {
+      const pending = JSON.parse(localStorage.getItem('flare_pending_newsletters') || '[]');
+      localStorage.setItem('flare_pending_newsletters', JSON.stringify(
+        pending.filter((r) => r.username !== currentUser)
+      ));
+      localStorage.removeItem('floodUpdatesPreference');
+      setNewsletterOn(false);
+    }
+  };
+
   // ── delete account ──
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -432,17 +458,21 @@ const Settings = () => {
 
           {/* ── Notifications ── */}
           <SectionCard title="Notifications">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-              <div>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color: '#1F2937', margin: 0 }}>
-                  Disaster Alerts
-                </p>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', margin: '2px 0 0' }}>
-                  Receive notifications about active disasters in your area
-                </p>
-              </div>
-              <Toggle checked={notifs.disasterAlerts} onChange={handleNotifToggle} />
-            </div>
+            {(accountType === 'citizen' || accountType === 'organization') && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <div>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 500, color: '#1F2937', margin: 0 }}>
+                      Newsletter
+                    </p>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', margin: '2px 0 0' }}>
+                      Receive daily email updates about flood alerts and relief efforts
+                    </p>
+                  </div>
+                  <Toggle checked={newsletterOn} onChange={handleNewsletterToggle} />
+                </div>
+              </>
+            )}
           </SectionCard>
 
           {/* ── Account ── */}
@@ -533,6 +563,28 @@ const Settings = () => {
 
         </div>
       </div>
+
+      {showNewsletterPopup && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, paddingTop: '220px' }}>
+          <div style={{ position: 'relative', backgroundColor: '#ffffff', borderRadius: '16px', padding: '32px', maxWidth: '450px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', paddingTop: '80px' }}>
+            <img src="/approval.png" alt="Approval" style={{ position: 'absolute', top: '-450px', left: '0', width: '100%', height: 'auto' }} />
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#000000', marginBottom: '24px', textAlign: 'center', lineHeight: 1.5, paddingTop: '20px' }}>
+              Your newsletter subscription request has been submitted for verification.<br />
+              You will be notified once your request is approved.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowNewsletterPopup(false)}
+                style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer' }}
+                onMouseEnter={(e) => { e.target.style.backgroundColor = '#8f9dad'; }}
+                onMouseLeave={(e) => { e.target.style.backgroundColor = '#b7c9dc'; }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

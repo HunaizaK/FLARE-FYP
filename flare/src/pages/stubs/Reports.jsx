@@ -1,36 +1,80 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import Navbar from '../../components/Navbar';
-import { AssessmentOutlined } from '@mui/icons-material';
+import { FileDownloadOutlined } from '@mui/icons-material';
 import api from '../../services/api';
 
-const GAUGE_LIST = [
-  'Kotli', 'Phulra', 'Besham_Qila', 'Bunji', 'Shatial_Bridge',
-  'Chakothi', 'Chattar_Kalass', 'Domel', 'Hattian_Bala',
-  'Kaghan', 'Talhata_Bridge', 'Dhudhnial', 'Muzaffarabad',
-];
+const renderMarkdown = (md) => {
+  if (!md) return '';
+  const lines = md.split('\n');
+  const html = [];
+  let inList = false;
 
-const STATUS_COLOR = {
-  normal:  { bg: '#DCFCE7', color: '#166534', border: '#86EFAC', label: 'Normal' },
-  warning: { bg: '#FEF9C3', color: '#854D0E', border: '#FDE047', label: 'Warning' },
-  danger:  { bg: '#FEE2E2', color: '#991B1B', border: '#FCA5A5', label: 'Danger' },
+  for (const rawLine of lines) {
+    const line = rawLine
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    if (/^### /.test(rawLine)) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push(`<h3 style="font-family:Lexend,sans-serif;font-size:16px;font-weight:600;color:#1F2937;margin:20px 0 6px 0">${line.replace(/^### /, '')}</h3>`);
+    } else if (/^## /.test(rawLine)) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push(`<h2 style="font-family:Lexend,sans-serif;font-size:20px;font-weight:700;color:#1F618A;margin:24px 0 8px 0">${line.replace(/^## /, '')}</h2>`);
+    } else if (/^# /.test(rawLine)) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push(`<h1 style="font-family:Lexend,sans-serif;font-size:26px;font-weight:700;color:#1F618A;margin:0 0 16px 0">${line.replace(/^# /, '')}</h1>`);
+    } else if (/^- /.test(rawLine)) {
+      if (!inList) { html.push('<ul style="margin:8px 0 8px 24px;padding:0">'); inList = true; }
+      html.push(`<li style="font-family:Inter,sans-serif;font-size:15px;margin:6px 0;color:#374151;line-height:1.7">${line.replace(/^- /, '')}</li>`);
+    } else if (/^---$/.test(rawLine.trim())) {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push('<hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0"/>');
+    } else if (rawLine.trim() === '') {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push('<div style="height:10px"></div>');
+    } else {
+      if (inList) { html.push('</ul>'); inList = false; }
+      html.push(`<p style="font-family:Inter,sans-serif;font-size:15px;margin:6px 0;color:#374151;line-height:1.75">${line}</p>`);
+    }
+  }
+  if (inList) html.push('</ul>');
+  return html.join('\n');
 };
 
 const Reports = () => {
-  const [showPopup, setShowPopup] = useState(false);
-  const [showApprovalPopup, setShowApprovalPopup] = useState(false);
-  const [dontAskAgain, setDontAskAgain] = useState(false);
+  const navigate    = useNavigate();
+  const currentUser = useSelector((s) => s.auth.user);
+  const accountType = useSelector((s) => s.auth.accountType);
+  const isAdmin     = accountType === 'admin';
 
-  const [selectedGauge, setSelectedGauge] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [reports, setReports] = useState([]);
-  const [error, setError] = useState('');
+  const [content,      setContent]      = useState('');
+  const [loadingReport, setLoadingReport] = useState(true);
+  const [reportError,  setReportError]  = useState('');
+
+  const [showPopup,        setShowPopup]        = useState(false);
+  const [showApprovalPopup, setShowApprovalPopup] = useState(false);
+  const [dontAskAgain,     setDontAskAgain]     = useState(false);
 
   useEffect(() => {
-    const preference = localStorage.getItem('floodUpdatesPreference');
-    if (!preference) setShowPopup(true);
-  }, []);
+    api.get('/flood-report')
+      .then((res) => setContent(res.data.content || ''))
+      .catch(() => setReportError('Failed to load the flood report. Please try again later.'))
+      .finally(() => setLoadingReport(false));
+
+    if (!isAdmin) {
+      const pref = localStorage.getItem('floodUpdatesPreference');
+      if (!pref) setShowPopup(true);
+    }
+  }, [isAdmin]);
 
   const handleYes = () => {
+    const pending = JSON.parse(localStorage.getItem('flare_pending_newsletters') || '[]');
+    if (!pending.some((r) => r.username === currentUser)) {
+      pending.push({ id: Date.now(), username: currentUser, submittedAt: new Date().toISOString() });
+      localStorage.setItem('flare_pending_newsletters', JSON.stringify(pending));
+    }
     if (dontAskAgain) localStorage.setItem('floodUpdatesPreference', 'yes');
     setShowPopup(false);
     setShowApprovalPopup(true);
@@ -41,268 +85,88 @@ const Reports = () => {
     setShowPopup(false);
   };
 
-  const handleGenerate = async () => {
-    if (!selectedGauge || generating) return;
-    setGenerating(true);
-    setError('');
-
-    try {
-      const res = await api.post('/reports/generate', { gauge_name: selectedGauge });
-      const data = res.data;
-
-      setReports((prev) => [
-        {
-          id:          Date.now(),
-          gauge:       selectedGauge,
-          station:     data.station || selectedGauge.replace(/_/g, ' '),
-          river:       data.river   || '—',
-          status:      data.status  || 'normal',
-          generatedAt: new Date().toLocaleString(),
-          text:        data.report,
-        },
-        // Replace any existing report for the same gauge
-        ...prev.filter((r) => r.gauge !== selectedGauge),
-      ]);
-    } catch (err) {
-      const detail = err.response?.data?.detail || '';
-      if (err.response?.status === 404) {
-        setError(`No forecast data for ${selectedGauge.replace(/_/g, ' ')}. Run the ML inference pipeline first.`);
-      } else if (err.response?.status === 503) {
-        setError('ML forecast service is not running. Start the ML API on port 8001.');
-      } else {
-        setError(detail || 'Failed to generate report. Please try again.');
-        console.error(err);
-      }
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleDownload = (report) => {
-    const lines = [
-      'FLARE — FLOOD SITUATION REPORT',
-      '='.repeat(50),
-      `Station   : ${report.station}`,
-      `River     : ${report.river}`,
-      `Status    : ${report.status.toUpperCase()}`,
-      `Generated : ${report.generatedAt}`,
-      '',
-      report.text,
-      '',
-      '—'.repeat(50),
-      'Generated by FLARE (Flood Level Analysis & Risk Estimation)',
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `FLARE_Report_${report.gauge}_${new Date().toISOString().slice(0, 10)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const handleDownload = () => window.print();
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-white">
       <Navbar />
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #report-doc, #report-doc * { visibility: visible; }
+          #report-doc { position: fixed; top: 0; left: 0; width: 100%; padding: 40px 60px; }
+        }
+      `}</style>
 
       <div
         className="absolute top-0 h-full transition-all duration-300 overflow-y-auto"
         style={{ left: '146px', width: 'calc(100% - 146px)' }}
       >
         {/* Sticky Header */}
-        <div
-          style={{
-            position: 'sticky', top: 0,
-            backgroundColor: '#FFFFFF', zIndex: 100,
-            padding: '20px 30px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
+        <div style={{ position: 'sticky', top: 0, backgroundColor: '#FFFFFF', zIndex: 100, padding: '20px 30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '50px', fontWeight: 600, color: '#000000', margin: 0 }}>
             Reports
           </h1>
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/admin/report-approval')}
+              style={{ height: '48px', padding: '0 24px', borderRadius: '12px', backgroundColor: '#b7c9dc', border: 'none', outline: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: '#000000', boxShadow: '0 0px 12px rgba(0,0,0,0.18)' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8f9dad'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#b7c9dc'}
+            >
+              Approve Reports
+            </button>
+          )}
         </div>
 
-        <div style={{ padding: '30px 30px' }}>
-
-          {/* Generator Card */}
-          <div
-            style={{
-              backgroundColor: '#FFFFFF', borderRadius: '16px',
-              padding: '28px 36px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              border: '1px solid #E5E7EB', marginBottom: '30px',
-            }}
-          >
-            <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 600, color: '#1F2937', marginBottom: '6px', marginTop: 0 }}>
-              Generate Flood Report
-            </h2>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', marginBottom: '24px', marginTop: 0 }}>
-              Select a gauge station to generate an AI-powered flood situation report from live forecast data.
-            </p>
-
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <select
-                value={selectedGauge}
-                onChange={(e) => { setSelectedGauge(e.target.value); setError(''); }}
-                style={{
-                  height: '48px', padding: '0 16px', borderRadius: '12px',
-                  border: '2px solid #b7c9dc', fontFamily: 'Inter, sans-serif',
-                  fontSize: '15px', color: '#1F2937', backgroundColor: '#FFFFFF',
-                  outline: 'none', cursor: 'pointer', minWidth: '240px',
-                }}
-              >
-                <option value="">Select a gauge station…</option>
-                {GAUGE_LIST.map((g) => (
-                  <option key={g} value={g}>{g.replace(/_/g, ' ')}</option>
-                ))}
-              </select>
-
-              <button
-                onClick={handleGenerate}
-                disabled={!selectedGauge || generating}
-                style={{
-                  height: '48px', padding: '0 28px', borderRadius: '12px',
-                  backgroundColor: selectedGauge && !generating ? '#1F618A' : '#b7c9dc',
-                  border: 'none', outline: 'none',
-                  cursor: selectedGauge && !generating ? 'pointer' : 'not-allowed',
-                  fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600,
-                  color: '#FFFFFF', transition: 'background-color 0.2s',
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                }}
-                onMouseEnter={(e) => { if (selectedGauge && !generating) e.currentTarget.style.backgroundColor = '#174f6f'; }}
-                onMouseLeave={(e) => { if (selectedGauge && !generating) e.currentTarget.style.backgroundColor = '#1F618A'; }}
-              >
-                {generating ? (
-                  <>
-                    <div
-                      style={{
-                        width: '16px', height: '16px',
-                        border: '2px solid rgba(255,255,255,0.3)',
-                        borderTopColor: '#FFFFFF', borderRadius: '50%',
-                        animation: 'spin 0.8s linear infinite',
-                        flexShrink: 0,
-                      }}
-                    />
-                    Generating…
-                  </>
-                ) : (
-                  <>
-                    <AssessmentOutlined style={{ fontSize: '18px' }} />
-                    Generate Report
-                  </>
-                )}
-              </button>
-            </div>
-
-            {error && (
-              <p style={{
-                marginTop: '16px', marginBottom: 0,
-                fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#EF4444',
-                backgroundColor: '#FEF2F2', padding: '10px 16px',
-                borderRadius: '8px', border: '1px solid #FCA5A5',
-              }}>
-                {error}
-              </p>
-            )}
-          </div>
-
-          {/* Generated Reports */}
-          {reports.length === 0 && !generating ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF' }}>
-              Select a gauge station above and click Generate Report to get started.
-            </div>
+        <div style={{ padding: '30px', display: 'flex', justifyContent: 'center' }}>
+          {loadingReport ? (
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#9CA3AF', marginTop: '60px' }}>Loading report…</p>
+          ) : reportError ? (
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#EF4444', marginTop: '60px' }}>{reportError}</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {reports.map((report) => {
-                const s = STATUS_COLOR[report.status] || STATUS_COLOR.normal;
-                return (
-                  <div
-                    key={report.id}
-                    style={{
-                      backgroundColor: '#FFFFFF', borderRadius: '16px',
-                      padding: '28px 36px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                      border: '1px solid #E5E7EB',
-                    }}
-                  >
-                    {/* Report Header */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', gap: '16px', flexWrap: 'wrap' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                          <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '22px', fontWeight: 600, color: '#000000', margin: 0 }}>
-                            {report.station}
-                          </h2>
-                          <span style={{
-                            backgroundColor: s.bg, color: s.color,
-                            border: `1px solid ${s.border}`,
-                            padding: '3px 12px', borderRadius: '20px',
-                            fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 500,
-                            textTransform: 'capitalize',
-                          }}>
-                            {s.label}
-                          </span>
-                        </div>
-                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', margin: 0 }}>
-                          {report.river} &bull; Generated {report.generatedAt}
-                        </p>
-                      </div>
+            <div style={{ width: '100%', maxWidth: '860px', position: 'relative' }}>
+              {/* Download icon */}
+              <button
+                onClick={handleDownload}
+                title="Download / Print PDF"
+                style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 2, background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F3F4F6'; e.currentTarget.style.color = '#1F2937'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6B7280'; }}
+              >
+                <FileDownloadOutlined style={{ fontSize: '24px' }} />
+              </button>
 
-                      <button
-                        onClick={() => handleDownload(report)}
-                        style={{
-                          height: '44px', padding: '0 20px', borderRadius: '12px',
-                          backgroundColor: '#FFFFFF', border: '2px solid #b7c9dc',
-                          outline: 'none', cursor: 'pointer',
-                          fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600,
-                          color: '#1F2937', whiteSpace: 'nowrap', flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f5f9'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
-                      >
-                        Download Report
-                      </button>
-                    </div>
-
-                    {/* Divider */}
-                    <div style={{ height: '1px', backgroundColor: '#F3F4F6', marginBottom: '20px' }} />
-
-                    {/* Report Body */}
-                    <div style={{
-                      fontFamily: 'Inter, sans-serif', fontSize: '15px',
-                      color: '#374151', lineHeight: 1.9,
-                      whiteSpace: 'pre-wrap',
-                    }}>
-                      {report.text}
-                    </div>
-                  </div>
-                );
-              })}
+              {/* A4-style document */}
+              <div
+                id="report-doc"
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '8px',
+                  padding: '60px 72px',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+                  border: '1px solid #E5E7EB',
+                  minHeight: '1000px',
+                }}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+              />
             </div>
           )}
-
         </div>
       </div>
 
       {/* Newsletter Approval Popup */}
-      {showApprovalPopup && (
+      {!isAdmin && showApprovalPopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, paddingTop: '220px' }}>
           <div style={{ position: 'relative', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '32px', maxWidth: '450px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', paddingTop: '80px' }}>
             <img src="/approval.png" alt="Approval" style={{ position: 'absolute', top: '-450px', left: '0', width: '100%', height: 'auto' }} />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#000000', marginBottom: '24px', textAlign: 'center', lineHeight: 1.5, paddingTop: '20px' }}>
-              Your newsletter subscription request has been submitted for verification.
-              <br />
+              Your newsletter subscription request has been submitted for verification.<br />
               You will be notified once your request is approved.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <button
-                onClick={() => setShowApprovalPopup(false)}
-                style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer', transition: 'background-color 0.2s' }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#8f9dad'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#b7c9dc'}
-              >
+              <button onClick={() => setShowApprovalPopup(false)} style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer' }} onMouseEnter={(e) => { e.target.style.backgroundColor = '#8f9dad'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = '#b7c9dc'; }}>
                 OK
               </button>
             </div>
@@ -311,7 +175,7 @@ const Reports = () => {
       )}
 
       {/* Newsletter Subscription Popup */}
-      {showPopup && (
+      {!isAdmin && showPopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, paddingTop: '220px' }}>
           <div style={{ position: 'relative', backgroundColor: '#ffffff', borderRadius: '16px', padding: '32px', maxWidth: '450px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', paddingTop: '80px' }}>
             <img src="/newsletter.png" alt="Newsletter" style={{ position: 'absolute', top: '-450px', left: '0', width: '100%', height: 'auto' }} />
@@ -322,31 +186,15 @@ const Reports = () => {
               Would you like to subscribe to our daily email newsletter?
             </p>
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '20px' }}>
-              <button
-                onClick={handleYes}
-                style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
-                onMouseEnter={(e) => { e.target.style.backgroundColor = '#8f9dad'; }}
-                onMouseLeave={(e) => { e.target.style.backgroundColor = '#b7c9dc'; }}
-              >
+              <button onClick={handleYes} style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer' }} onMouseEnter={(e) => { e.target.style.backgroundColor = '#8f9dad'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = '#b7c9dc'; }}>
                 Yes
               </button>
-              <button
-                onClick={handleNo}
-                style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
-                onMouseEnter={(e) => { e.target.style.backgroundColor = '#8f9dad'; }}
-                onMouseLeave={(e) => { e.target.style.backgroundColor = '#b7c9dc'; }}
-              >
+              <button onClick={handleNo} style={{ padding: '12px 32px', width: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#b7c9dc', color: '#000000', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 500, cursor: 'pointer' }} onMouseEnter={(e) => { e.target.style.backgroundColor = '#8f9dad'; }} onMouseLeave={(e) => { e.target.style.backgroundColor = '#b7c9dc'; }}>
                 No
               </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                id="dontAskAgain"
-                checked={dontAskAgain}
-                onChange={(e) => setDontAskAgain(e.target.checked)}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-              />
+              <input type="checkbox" id="dontAskAgain" checked={dontAskAgain} onChange={(e) => setDontAskAgain(e.target.checked)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
               <label htmlFor="dontAskAgain" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', cursor: 'pointer', userSelect: 'none' }}>
                 Don't ask again
               </label>

@@ -41,7 +41,7 @@ const Navbar = () => {
   const adminMenuItems = [
     { icon: <MapOutlined />,                  label: 'Maps',                path: '/maps' },
     { icon: <HowToRegOutlined />,             label: 'Sign-up Approvals',   path: '/admin/users' },
-    { icon: <AssessmentOutlined />,            label: 'Report Approval',     path: '/admin/report-approval' },
+    { icon: <AssessmentOutlined />,            label: 'Report Approval',     path: '/reports' },
     { icon: <CottageOutlined />,              label: 'Shelter Approvals',   path: '/admin/shelter-list' },
     { icon: <LuggageOutlined />,               label: 'Lost & Found',        path: '/lost-found' },
     { icon: <VolunteerActivismOutlined />,     label: 'Donation',            path: '/donation' },

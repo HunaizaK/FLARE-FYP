@@ -18,8 +18,7 @@ const loadNewsletters = () => {
 };
 
 const COLUMNS = [
-  { key: 'email',       label: 'Email' },
-  { key: 'phone',       label: 'Phone Number' },
+  { key: 'username',    label: 'Username' },
   { key: 'submittedAt', label: 'Approval Date' },
 ];
 
@@ -53,9 +52,7 @@ const ReportApproval = () => {
   const rows = useMemo(() => {
     const q = searchQuery.toLowerCase();
     const filtered = reports.filter(
-      (r) =>
-        r.email.toLowerCase().includes(q) ||
-        r.phone.toLowerCase().includes(q)
+      (r) => (r.username || '').toLowerCase().includes(q)
     );
     return [...filtered].sort((a, b) => {
       const av = a[sortField] ?? '';
@@ -109,7 +106,7 @@ const ReportApproval = () => {
               <SearchOutlined style={{ color: '#9CA3AF', fontSize: '22px', marginRight: '12px', flexShrink: 0 }} />
               <input
                 type="text"
-                placeholder="Search by email or phone number"
+                placeholder="Search by username"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -183,7 +180,7 @@ const ReportApproval = () => {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={4} style={{
+                    <td colSpan={3} style={{
                       padding: '56px',
                       textAlign: 'center',
                       fontFamily: 'Inter, sans-serif',
@@ -205,13 +202,10 @@ const ReportApproval = () => {
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>
-                        {report.email}
-                      </td>
-                      <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#1F2937' }}>
-                        {report.phone}
+                        {report.username || report.email || '—'}
                       </td>
                       <td style={{ padding: '16px 20px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6B7280', whiteSpace: 'nowrap' }}>
-                        {report.submittedAt}
+                        {report.submittedAt ? new Date(report.submittedAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                       </td>
                       <td style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>

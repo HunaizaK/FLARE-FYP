@@ -52,7 +52,7 @@ def ensure_admin_exists():
 
 @app.on_event("startup")
 def startup_event():
-    ensure_admin_exists()
+    pass
 
 
 app.include_router(auth_router)

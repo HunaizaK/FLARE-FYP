@@ -117,7 +117,6 @@ def signup(data: SignupSchema):
 
     finally:
         cursor.close()
-        conn.close()
 
 
 @router.post("/login")
@@ -162,7 +161,6 @@ def login(data: LoginSchema):
 
     finally:
         cursor.close()
-        conn.close()
 
 
 @router.get("/me")

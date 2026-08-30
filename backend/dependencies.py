@@ -27,23 +27,10 @@ def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
 
 def require_approved_user(current_user: dict = Depends(get_current_user)) -> dict:
     """Allow any authenticated user whose account is approved.
-    Admin is always approved. Citizens are auto-approved on signup.
-    Organizations must be approved by admin."""
-    if current_user.get("role") == "admin":
-        return current_user
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "SELECT is_approved FROM app_users WHERE id = %s",
-            (current_user["user_id"],)
-        )
-        user = cursor.fetchone()
-        if not user or not user["is_approved"]:
-            raise HTTPException(status_code=403, detail="Account not approved yet")
-        return current_user
-    finally:
-        cursor.close()
+    is_approved is embedded in the JWT — no extra DB call needed."""
+    if not current_user.get("is_approved"):
+        raise HTTPException(status_code=403, detail="Account not approved yet")
+    return current_user
 
 
 def require_organization(current_user: dict = Depends(get_current_user)) -> dict:

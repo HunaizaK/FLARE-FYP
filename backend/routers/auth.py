@@ -146,8 +146,9 @@ def login(data: LoginSchema):
             raise HTTPException(status_code=403, detail="Organization not approved yet")
 
         token = create_access_token({
-            "user_id": str(user["id"]),
-            "role": user["role"]
+            "user_id"    : str(user["id"]),
+            "role"       : user["role"],
+            "is_approved": user["is_approved"],
         })
 
         return {

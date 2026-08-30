@@ -9,13 +9,14 @@ import {
 } from '@mui/icons-material';
 import api from '../../services/api';
 
-const getImageSrc = (b64) => {
-  if (!b64) return null;
-  if (b64.startsWith('data:')) return b64;
-  if (b64.startsWith('/9j/'))   return `data:image/jpeg;base64,${b64}`;
-  if (b64.startsWith('iVBOR'))  return `data:image/png;base64,${b64}`;
-  if (b64.startsWith('UklGR'))  return `data:image/webp;base64,${b64}`;
-  return `data:image/jpeg;base64,${b64}`;
+const getImageSrc = (img) => {
+  if (!img) return null;
+  if (img.startsWith('http') || img.startsWith('blob:')) return img;  // signed URL or blob
+  if (img.startsWith('data:')) return img;
+  if (img.startsWith('/9j/'))   return `data:image/jpeg;base64,${img}`;
+  if (img.startsWith('iVBOR'))  return `data:image/png;base64,${img}`;
+  if (img.startsWith('UklGR'))  return `data:image/webp;base64,${img}`;
+  return `data:image/jpeg;base64,${img}`;
 };
 
 const CategoryBadge = ({ category }) => (
@@ -79,7 +80,21 @@ const LostFound = () => {
 
   useEffect(() => { fetchPosts(); }, []);
 
-  const handleItemClick   = (item) => { setOpenMenuId(null); setSelectedItem(item); setShowReportForm(false); };
+  const handleItemClick = async (item) => {
+    setOpenMenuId(null);
+    setShowReportForm(false);
+    // Set basic info immediately so detail view opens instantly
+    setSelectedItem(item);
+    // Then fetch full post with image in background
+    try {
+      const res = await api.get(`/lost-found/${item.id}`);
+      const full = res.data.data;
+      setSelectedItem((prev) => prev?.id === item.id ? {
+        ...prev,
+        image: full.image ?? null,
+      } : prev);
+    } catch (_) {}
+  };
   const handleReportLost  = () => { setShowReportForm(true); setSelectedItem(null); };
   const handleBackToList  = () => { setSelectedItem(null); setShowReportForm(false); };
   const handleFormChange  = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));

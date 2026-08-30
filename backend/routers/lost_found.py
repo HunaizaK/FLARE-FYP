@@ -1,9 +1,9 @@
-import base64
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Form, File, UploadFile
 from psycopg2.extras import Json
 from database import get_db
 from dependencies import require_approved_user
+from storage import upload_image, get_signed_url, get_signed_urls_batch
 
 router = APIRouter(prefix="/lost-found", tags=["Lost & Found"])
 
@@ -18,10 +18,17 @@ def get_posts(current_user: dict = Depends(require_approved_user)):
     conn = get_db()
     cursor = conn.cursor()
     try:
+        COLUMNS = """
+            p.id, p.category, p.location, p.contact, p.name,
+            p.additional_info, p.post_type, p.approval_status,
+            p.user_id, p.created_at, p.updated_at,
+            p.image_url,
+            u.username, u.contact_no, u.created_at AS user_created_at
+        """
         if current_user["role"] == "admin":
             cursor.execute(
-                """
-                SELECT p.*, u.username, u.contact_no, u.created_at AS user_created_at
+                f"""
+                SELECT {COLUMNS}
                 FROM lost_found_posts p
                 LEFT JOIN app_users u ON u.id = p.user_id
                 ORDER BY p.created_at DESC
@@ -29,22 +36,58 @@ def get_posts(current_user: dict = Depends(require_approved_user)):
             )
         else:
             cursor.execute(
-                """
-                SELECT p.*, u.username, u.contact_no, u.created_at AS user_created_at
+                f"""
+                SELECT {COLUMNS}
                 FROM lost_found_posts p
                 LEFT JOIN app_users u ON u.id = p.user_id
                 WHERE p.approval_status = 'approved'
                 ORDER BY p.created_at DESC
                 """
             )
-        rows = cursor.fetchall()
-        result = []
-        for post in rows:
-            row = dict(post)
-            if row.get("image") is not None:
-                row["image"] = base64.b64encode(bytes(row["image"])).decode("utf-8")
-            result.append(row)
-        return {"success": True, "message": "Posts retrieved successfully", "data": result}
+        rows = [dict(r) for r in cursor.fetchall()]
+
+        # Batch generate signed URLs for all posts that have an image
+        paths = [r["image_url"] for r in rows if r.get("image_url")]
+        signed = get_signed_urls_batch(paths) if paths else {}
+
+        for row in rows:
+            row["image"] = signed.get(row.get("image_url"))
+            row.pop("image_url", None)
+
+        return {"success": True, "message": "Posts retrieved successfully", "data": rows}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+
+
+@router.get("/{post_id}")
+def get_post(post_id: str, current_user: dict = Depends(require_approved_user)):
+    """Get a single post with full image data."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT p.*, u.username, u.contact_no
+            FROM lost_found_posts p
+            LEFT JOIN app_users u ON u.id = p.user_id
+            WHERE p.id = %s
+            """,
+            (post_id,)
+        )
+        post = cursor.fetchone()
+        if not post:
+            raise HTTPException(status_code=404, detail="Post not found")
+        row = dict(post)
+        # New posts: image_url has Supabase Storage path → generate signed URL
+        if row.get("image_url"):
+            row["image"] = get_signed_url(row["image_url"])
+        else:
+            row["image"] = None
+        return {"success": True, "data": row}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
@@ -80,8 +123,9 @@ def submit_add_request(
         }
 
         if image and image.filename:
-            payload["image"] = base64.b64encode(image.file.read()).decode("utf-8")
-            payload["image_content_type"] = image.content_type
+            file_bytes = image.file.read()
+            file_name  = upload_image(file_bytes, image.content_type)
+            payload["image_url"] = file_name   # store path, not base64
 
         cursor.execute(
             """
@@ -155,8 +199,9 @@ def submit_edit_request(
         }
 
         if image and image.filename:
-            payload["image"] = base64.b64encode(image.file.read()).decode("utf-8")
-            payload["image_content_type"] = image.content_type
+            file_bytes = image.file.read()
+            file_name  = upload_image(file_bytes, image.content_type)
+            payload["image_url"] = file_name
 
         cursor.execute(
             """

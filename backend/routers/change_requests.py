@@ -1,4 +1,3 @@
-import base64
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 import psycopg2
@@ -210,14 +209,11 @@ def reject_change_request(request_id: str, current_user: dict = Depends(require_
 def _execute_add(cursor, table_name: str, payload: dict, admin_id: str):
     """Insert a new row into the target table from the change_request payload."""
     if table_name == "lost_found_posts":
-        image_bytes = None
-        if payload.get("image"):
-            image_bytes = psycopg2.Binary(base64.b64decode(payload["image"]))
         cursor.execute(
             """
             INSERT INTO lost_found_posts
                 (user_id, category, location, contact, name, post_type,
-                 additional_info, image, approval_status, approved_by, approved_at)
+                 additional_info, image_url, approval_status, approved_by, approved_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'approved', %s, NOW())
             """,
             (
@@ -228,7 +224,7 @@ def _execute_add(cursor, table_name: str, payload: dict, admin_id: str):
                 payload["name"],
                 payload["post_type"],
                 payload.get("additional_info"),
-                image_bytes,
+                payload.get("image_url"),   # Supabase Storage path or None
                 admin_id,
             )
         )
@@ -271,14 +267,13 @@ def _execute_add(cursor, table_name: str, payload: dict, admin_id: str):
 def _execute_edit(cursor, table_name: str, record_id: str, payload: dict):
     """Update an existing row in the target table using the full payload."""
     if table_name == "lost_found_posts":
-        if payload.get("image"):
-            # New image provided — update all fields including image
-            image_bytes = psycopg2.Binary(base64.b64decode(payload["image"]))
+        if payload.get("image_url"):
+            # New image uploaded — update image_url too
             cursor.execute(
                 """
                 UPDATE lost_found_posts
                 SET category = %s, location = %s, contact = %s,
-                    name = %s, post_type = %s, additional_info = %s, image = %s
+                    name = %s, post_type = %s, additional_info = %s, image_url = %s
                 WHERE id = %s
                 """,
                 (
@@ -288,12 +283,12 @@ def _execute_edit(cursor, table_name: str, record_id: str, payload: dict):
                     payload["name"],
                     payload["post_type"],
                     payload.get("additional_info"),
-                    image_bytes,
+                    payload["image_url"],
                     record_id,
                 )
             )
         else:
-            # No new image — leave existing image unchanged
+            # No new image — leave existing image_url unchanged
             cursor.execute(
                 """
                 UPDATE lost_found_posts

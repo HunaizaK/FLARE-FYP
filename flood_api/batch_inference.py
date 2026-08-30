@@ -12,7 +12,7 @@ FLOOD_MODEL_DIR = BASE_DIR / "flood_models"
 OUTPUT_DIR      = BASE_DIR / "outputs" / "flood_maps"
 LSTM_FORECAST_DIR = Path(os.environ.get(
     "LSTM_FORECAST_DIR",
-    BASE_DIR.parent / "backend" / "outputs" / "forecasts",
+    BASE_DIR.parent / "ml" / "outputs" / "forecasts",
 ))
 
 COLOR_LOW_CONF  = (100, 180, 255, 140)

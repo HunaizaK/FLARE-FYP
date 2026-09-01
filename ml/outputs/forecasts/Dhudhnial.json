@@ -1,0 +1,58 @@
+{
+  "gauge": "Dhudhnial",
+  "generated_at": "2026-07-31 22:21:14",
+  "status": "Normal",
+  "lat": 34.704722,
+  "lon": 74.105833,
+  "station": "DUDHNIAL",
+  "river": "NEELUM",
+  "thresholds": {
+    "warning": 576.4,
+    "severe": 768.6,
+    "extreme": 912.7
+  },
+  "forecast": [
+    {
+      "date": "2022-08-11",
+      "predicted": 132.4,
+      "lower_20": 125.7,
+      "upper_80": 144.7
+    },
+    {
+      "date": "2022-08-12",
+      "predicted": 129.5,
+      "lower_20": 120.9,
+      "upper_80": 146.4
+    },
+    {
+      "date": "2022-08-13",
+      "predicted": 125.5,
+      "lower_20": 116.3,
+      "upper_80": 144.7
+    },
+    {
+      "date": "2022-08-14",
+      "predicted": 122.1,
+      "lower_20": 112.4,
+      "upper_80": 143.8
+    },
+    {
+      "date": "2022-08-15",
+      "predicted": 118.8,
+      "lower_20": 109.1,
+      "upper_80": 143.1
+    },
+    {
+      "date": "2022-08-16",
+      "predicted": 115.5,
+      "lower_20": 105.4,
+      "upper_80": 142.5
+    },
+    {
+      "date": "2022-08-17",
+      "predicted": 112.3,
+      "lower_20": 101.7,
+      "upper_80": 142.0
+    }
+  ]
+}

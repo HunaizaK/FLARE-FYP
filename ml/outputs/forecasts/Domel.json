@@ -1,0 +1,58 @@
+{
+  "gauge": "Domel",
+  "generated_at": "2026-07-31 22:21:13",
+  "status": "Normal",
+  "lat": 34.366667,
+  "lon": 73.466667,
+  "station": "DOMEL",
+  "river": "JHELUM",
+  "thresholds": {
+    "warning": 499.9,
+    "severe": 666.5,
+    "extreme": 791.4
+  },
+  "forecast": [
+    {
+      "date": "2022-08-11",
+      "predicted": 339.6,
+      "lower_20": 323.0,
+      "upper_80": 373.6
+    },
+    {
+      "date": "2022-08-12",
+      "predicted": 324.1,
+      "lower_20": 306.2,
+      "upper_80": 371.7
+    },
+    {
+      "date": "2022-08-13",
+      "predicted": 311.9,
+      "lower_20": 294.1,
+      "upper_80": 365.1
+    },
+    {
+      "date": "2022-08-14",
+      "predicted": 301.5,
+      "lower_20": 283.4,
+      "upper_80": 356.7
+    },
+    {
+      "date": "2022-08-15",
+      "predicted": 291.7,
+      "lower_20": 273.6,
+      "upper_80": 347.3
+    },
+    {
+      "date": "2022-08-16",
+      "predicted": 282.2,
+      "lower_20": 264.2,
+      "upper_80": 337.5
+    },
+    {
+      "date": "2022-08-17",
+      "predicted": 273.3,
+      "lower_20": 255.5,
+      "upper_80": 328.4
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "gauge": "Chakothi",
+  "generated_at": "2026-07-31 22:21:13",
+  "status": "Normal",
+  "lat": 34.108056,
+  "lon": 73.9025,
+  "station": "CHAKOTHI",
+  "river": "JHELUM",
+  "thresholds": {
+    "warning": 457.9,
+    "severe": 610.6,
+    "extreme": 725.0
+  },
+  "forecast": [
+    {
+      "date": "2022-08-11",
+      "predicted": 297.2,
+      "lower_20": 281.9,
+      "upper_80": 331.0
+    },
+    {
+      "date": "2022-08-12",
+      "predicted": 285.0,
+      "lower_20": 269.8,
+      "upper_80": 324.0
+    },
+    {
+      "date": "2022-08-13",
+      "predicted": 271.3,
+      "lower_20": 256.6,
+      "upper_80": 317.9
+    },
+    {
+      "date": "2022-08-14",
+      "predicted": 258.9,
+      "lower_20": 244.3,
+      "upper_80": 305.8
+    },
+    {
+      "date": "2022-08-15",
+      "predicted": 247.4,
+      "lower_20": 233.2,
+      "upper_80": 292.5
+    },
+    {
+      "date": "2022-08-16",
+      "predicted": 237.1,
+      "lower_20": 223.3,
+      "upper_80": 280.3
+    },
+    {
+      "date": "2022-08-17",
+      "predicted": 228.2,
+      "lower_20": 214.7,
+      "upper_80": 270.1
+    }
+  ]
+}

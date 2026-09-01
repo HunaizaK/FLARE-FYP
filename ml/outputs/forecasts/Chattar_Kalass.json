@@ -1,0 +1,58 @@
+{
+  "gauge": "Chattar_Kalass",
+  "generated_at": "2026-07-31 22:21:13",
+  "status": "Normal",
+  "lat": 34.208333,
+  "lon": 73.5,
+  "station": "CHATTAR KALASS",
+  "river": "JHELUM",
+  "thresholds": {
+    "warning": 1258.2,
+    "severe": 1677.6,
+    "extreme": 1992.1
+  },
+  "forecast": [
+    {
+      "date": "2022-08-11",
+      "predicted": 755.9,
+      "lower_20": 882.6,
+      "upper_80": 1172.8
+    },
+    {
+      "date": "2022-08-12",
+      "predicted": 722.9,
+      "lower_20": 944.5,
+      "upper_80": 1304.3
+    },
+    {
+      "date": "2022-08-13",
+      "predicted": 682.0,
+      "lower_20": 842.1,
+      "upper_80": 1146.4
+    },
+    {
+      "date": "2022-08-14",
+      "predicted": 653.2,
+      "lower_20": 775.0,
+      "upper_80": 1048.1
+    },
+    {
+      "date": "2022-08-15",
+      "predicted": 632.5,
+      "lower_20": 729.0,
+      "upper_80": 985.0
+    },
+    {
+      "date": "2022-08-16",
+      "predicted": 617.5,
+      "lower_20": 699.1,
+      "upper_80": 948.0
+    },
+    {
+      "date": "2022-08-17",
+      "predicted": 607.0,
+      "lower_20": 680.7,
+      "upper_80": 929.6
+    }
+  ]
+}

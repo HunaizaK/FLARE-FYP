@@ -1,0 +1,58 @@
+{
+  "gauge": "Besham_Qila",
+  "generated_at": "2026-07-31 22:21:13",
+  "status": "Normal",
+  "lat": 34.924167,
+  "lon": 72.881944,
+  "station": "BESHAM QILA",
+  "river": "INDUS",
+  "thresholds": {
+    "warning": 6687.0,
+    "severe": 8916.0,
+    "extreme": 10587.8
+  },
+  "forecast": [
+    {
+      "date": "2022-08-11",
+      "predicted": 4865.1,
+      "lower_20": 4510.2,
+      "upper_80": 5285.3
+    },
+    {
+      "date": "2022-08-12",
+      "predicted": 5120.6,
+      "lower_20": 4746.5,
+      "upper_80": 5842.9
+    },
+    {
+      "date": "2022-08-13",
+      "predicted": 5512.4,
+      "lower_20": 5014.5,
+      "upper_80": 6509.1
+    },
+    {
+      "date": "2022-08-14",
+      "predicted": 5690.7,
+      "lower_20": 5080.0,
+      "upper_80": 6898.4
+    },
+    {
+      "date": "2022-08-15",
+      "predicted": 5710.5,
+      "lower_20": 5020.8,
+      "upper_80": 7095.2
+    },
+    {
+      "date": "2022-08-16",
+      "predicted": 5621.3,
+      "lower_20": 4871.4,
+      "upper_80": 7176.0
+    },
+    {
+      "date": "2022-08-17",
+      "predicted": 5470.8,
+      "lower_20": 4679.8,
+      "upper_80": 7186.0
+    }
+  ]
+}

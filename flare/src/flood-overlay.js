@@ -1,5 +1,5 @@
 export function initFloodOverlay(map, opts = {}) {
-  const API = opts.apiBase || "http://localhost:8000";
+  const API = opts.apiBase || import.meta.env.VITE_API_URL || "http://localhost:8000";
   const overlays = {};
   let loaded = false;
 

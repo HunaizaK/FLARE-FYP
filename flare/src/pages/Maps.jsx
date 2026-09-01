@@ -15,7 +15,9 @@ const FlyToHandler = ({ target }) => {
   return null;
 };
 
-function FloodOverlayLayer({ enabled, apiBase = "http://localhost:8000" }) {
+const _API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+function FloodOverlayLayer({ enabled, apiBase = _API_BASE }) {
   const map = useMap();
   const ctrlRef = useRef(null);
 
@@ -87,7 +89,7 @@ const Maps = () => {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/gauges')
+    fetch(`${_API_BASE}/api/gauges`)
       .then(res => res.json())
       .then(data => {
         const mapped = data.gauges.map(g => ({
@@ -195,7 +197,7 @@ const Maps = () => {
   const handleMarkerClick = (gauge) => {
     setSelectedGauge(gauge);
     setSelectedGaugeForecast(null);
-    fetch(`http://localhost:8000/api/gauges/${gauge.id}`)
+    fetch(`${_API_BASE}/api/gauges/${gauge.id}`)
       .then(res => res.json())
       .then(data => setSelectedGaugeForecast(data))
       .catch(() => {});
@@ -667,7 +669,7 @@ const Maps = () => {
             style={{ width: '100%', height: '100%' }}
           >
             <FlyToHandler target={flyTarget} />
-            <FloodOverlayLayer enabled={layers.inundationProbability} apiBase="http://localhost:8000" />
+            <FloodOverlayLayer enabled={layers.inundationProbability} apiBase={_API_BASE} />
             <TileLayer
               url={mapType === 'satellite'
                 ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'

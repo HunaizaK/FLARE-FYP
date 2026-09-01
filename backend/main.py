@@ -23,9 +23,15 @@ FLOOD_MAPS_DIR = os.path.join(os.path.dirname(__file__), '..', 'flood_api', 'out
 os.makedirs(FLOOD_MAPS_DIR, exist_ok=True)
 app.mount("/static/flood_maps", StaticFiles(directory=FLOOD_MAPS_DIR), name="flood_maps")
 
+# FRONTEND_URL env var: set to your deployed frontend URL on Render (e.g. https://flare.onrender.com)
+# Multiple origins can be comma-separated: https://flare.onrender.com,https://myapp.com
+_frontend_env = os.getenv("FRONTEND_URL", "")
+_extra_origins = [o.strip() for o in _frontend_env.split(",") if o.strip()]
+ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:3000"] + _extra_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -77,15 +77,7 @@ const Login = () => {
         src="/illustration.png"
         alt="illustration"
         className="login-illustration"
-        style={{
-          position: 'absolute',
-          bottom: '0',
-          left: '0',
-          height: '100vh',
-          width: 'auto',
-          objectFit: 'contain',
-          zIndex: 1,
-        }}
+        style={{ zIndex: 1 }}
         onError={(e) => {
           e.currentTarget.style.display = 'none';
         }}
@@ -132,13 +124,7 @@ const Login = () => {
       {/* White Box Container */}
       <div
         className="login-card-wrapper relative flex items-center justify-center"
-        style={{
-          position: 'absolute',
-          right: '100px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 10,
-        }}
+        style={{ zIndex: 10 }}
       >
         <div
           className="login-card-inner"

@@ -52,216 +52,157 @@ const Login = () => {
     }
   };
 
-  /* ─── shared input styles ─── */
-  const inputStyle = {
-    width: '100%', height: '48px',
-    border: '1px solid #E5E7EB', borderRadius: '30px',
-    padding: '0 20px', boxSizing: 'border-box',
-    fontFamily: 'Inter, sans-serif', fontSize: '14px',
-    backgroundColor: '#fff', color: '#374151', outline: 'none',
-  };
-  const labelStyle = {
-    fontFamily: 'Inter, sans-serif', fontSize: '14px',
-    fontWeight: 500, color: '#fff',
-    display: 'block', marginBottom: '8px',
-  };
-
-  /* ─── the form — identical for both layouts ─── */
-  const Form = ({ padding }) => (
-    <div style={{ padding }}>
-      <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '36px', fontWeight: 600, color: '#fff', marginBottom: '4px' }}>
+  /* ── shared form content ── */
+  const form = (
+    <>
+      <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '36px', fontWeight: 600, color: '#fff', marginBottom: 4 }}>
         Login
       </h1>
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#fbfcff', marginBottom: '20px' }}>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fbfcff', marginBottom: 20 }}>
         Please log in to your account to continue.
       </p>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Username */}
         <div>
-          <label style={labelStyle}>Username</label>
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500, color: '#fff', marginBottom: 8 }}>
+            Username
+          </label>
           <input
             type="text" name="username"
             value={formData.username} onChange={handleChange}
-            placeholder="Enter your username"
-            style={inputStyle} required
+            placeholder="Enter your username" required
+            style={{
+              width: '100%', height: 48, borderRadius: 30,
+              border: '1px solid #E5E7EB', padding: '0 20px',
+              fontFamily: 'Inter, sans-serif', fontSize: 14,
+              backgroundColor: '#fff', color: '#374151', outline: 'none', boxSizing: 'border-box',
+            }}
           />
         </div>
 
         {/* Password */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
-            <button type="button" style={{
-              fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#fff',
-              textDecoration: 'underline', background: 'none', border: 'none',
-              cursor: 'pointer', padding: 0,
-            }}>Forgot Password?</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <label style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500, color: '#fff' }}>
+              Password
+            </label>
+            <button type="button"
+              style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#fff', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              Forgot Password?
+            </button>
           </div>
           <div style={{ position: 'relative' }}>
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
               value={formData.password} onChange={handleChange}
-              placeholder="Enter your password"
-              style={{ ...inputStyle, paddingRight: '48px' }} required
+              placeholder="Enter your password" required
+              style={{
+                width: '100%', height: 48, borderRadius: 30,
+                border: '1px solid #E5E7EB', paddingLeft: 20, paddingRight: 48,
+                fontFamily: 'Inter, sans-serif', fontSize: 14,
+                backgroundColor: '#fff', color: '#374151', outline: 'none', boxSizing: 'border-box',
+              }}
             />
             <button type="button" onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center',
-              }}>
+              style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
               {showPassword
-                ? <AiOutlineEye    style={{ width: 20, height: 20, color: '#9CA3AF' }} />
+                ? <AiOutlineEye style={{ width: 20, height: 20, color: '#9CA3AF' }} />
                 : <AiOutlineEyeInvisible style={{ width: 20, height: 20, color: '#9CA3AF' }} />}
             </button>
           </div>
         </div>
 
         {loginError && (
-          <p style={{ color: '#EF4444', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
-            {loginError}
-          </p>
+          <p style={{ color: '#EF4444', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>{loginError}</p>
         )}
 
-        <button type="submit" disabled={!isFormComplete || isLoading} style={{
-          width: '100%', height: '48px', borderRadius: '16px',
-          border: 'none', outline: 'none', marginTop: '8px',
-          fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 500,
-          cursor: isFormComplete && !isLoading ? 'pointer' : 'not-allowed',
-          backgroundColor: isFormComplete && !isLoading ? '#b7c9dc' : '#9CA3AF',
-          color: '#000',
-        }}>
+        <button type="submit" disabled={!isFormComplete || isLoading}
+          style={{
+            width: '100%', height: 48, borderRadius: 16, border: 'none', outline: 'none',
+            marginTop: 8, fontFamily: 'Inter, sans-serif', fontSize: 15, fontWeight: 500,
+            backgroundColor: isFormComplete && !isLoading ? '#b7c9dc' : '#9CA3AF',
+            color: '#000', cursor: isFormComplete && !isLoading ? 'pointer' : 'not-allowed',
+            boxSizing: 'border-box',
+          }}>
           {isLoading ? 'Logging in…' : 'Login'}
         </button>
       </form>
 
-      <div style={{ textAlign: 'center', marginTop: '32px' }}>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#fff' }}>
+      <div style={{ textAlign: 'center', marginTop: 32 }}>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fff' }}>
           Don't have an account?{' '}
-          <button onClick={() => navigate('/createacc')} style={{
-            fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#fff',
-            textDecoration: 'underline', fontWeight: 500,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-          }}>Sign Up</button>
+          <button onClick={() => navigate('/createacc')}
+            style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fff', textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            Sign Up
+          </button>
         </p>
       </div>
-    </div>
-  );
-
-  /* ─── Logo ─── */
-  const Logo = ({ top, left, size }) => (
-    <div style={{ position: 'absolute', top, left, display: 'flex', alignItems: 'center', gap: '8px', zIndex: 50 }}>
-      <img src="/logo.png" alt="FLARE logo"
-        style={{ width: size, height: size, objectFit: 'contain' }}
-        onError={e => { e.currentTarget.style.display = 'none'; }} />
-      <span style={{ fontFamily: 'Lexend, sans-serif', fontWeight: 700, fontSize: size * 0.6, color: '#345f86', letterSpacing: '1px' }}>
-        FLARE
-      </span>
-    </div>
+    </>
   );
 
   return (
     <>
-      {/* ── CSS: show/hide entire layout trees by screen width ── */}
-      <style>{`
-        .fl-login-small  { display: none;  }
-        .fl-login-medium { display: none;  }
-        .fl-login-large  { display: block; }
+      {/* ══════════════════════════════════════════════════════
+          MOBILE + TABLET  (visible below lg = below 1024px)
+          Tailwind:  block lg:hidden
+      ══════════════════════════════════════════════════════ */}
+      <div className="block lg:hidden"
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#577a92' }}>
 
-        @media (max-width: 767px) {
-          .fl-login-small  { display: block; }
-          .fl-login-medium { display: none;  }
-          .fl-login-large  { display: none;  }
-        }
-        @media (min-width: 768px) and (max-width: 1024px) {
-          .fl-login-small  { display: none;  }
-          .fl-login-medium { display: block; }
-          .fl-login-large  { display: none;  }
-        }
-      `}</style>
+        {/* Logo — top-left */}
+        <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/logo.png" alt="FLARE"
+            style={{ width: 36, height: 36, objectFit: 'contain' }}
+            onError={e => { e.currentTarget.style.display = 'none'; }} />
+          <span style={{ fontFamily: 'Lexend, sans-serif', fontWeight: 700, fontSize: 22, color: '#345f86', letterSpacing: 1 }}>
+            FLARE
+          </span>
+        </div>
 
-      {/* ════════════════════════════════════════
-          MOBILE  ≤ 767px
-      ════════════════════════════════════════ */}
-      <div className="fl-login-small" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#577a92' }}>
-        <Logo top={16} left={16} size={36} />
+        {/* Illustration — fills top portion, man fully visible */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '48vh', backgroundColor: '#577a92', zIndex: 1 }}>
+          <img src="/illustration.png" alt="illustration"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom', display: 'block' }}
+            onError={e => { e.currentTarget.parentElement.style.display = 'none'; }} />
+        </div>
 
-        {/* Illustration — top 46% */}
-        <img src="/illustration.png" alt="illustration"
-          style={{
-            position: 'absolute', top: 0, left: 0,
-            width: '100%', height: '46vh',
-            objectFit: 'contain', objectPosition: 'center center',
-            backgroundColor: '#577a92',
-            zIndex: 1,
-          }}
-          onError={e => { e.currentTarget.style.display = 'none'; }} />
-
-        {/* Form — bottom 54% */}
-        <div style={{
-          position: 'absolute', top: '46vh', left: 0, right: 0, bottom: 0,
-          backgroundColor: '#577a92', overflowY: 'auto', zIndex: 2,
-        }}>
-          <Form padding="28px 24px 48px" />
+        {/* Login card — fills bottom portion, seamless blue */}
+        <div style={{ position: 'absolute', top: '48vh', left: 0, right: 0, bottom: 0, backgroundColor: '#577a92', overflowY: 'auto', zIndex: 2, padding: '24px 24px 48px' }}>
+          {form}
         </div>
       </div>
 
-      {/* ════════════════════════════════════════
-          TABLET  768px – 1024px
-      ════════════════════════════════════════ */}
-      <div className="fl-login-medium" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#577a92' }}>
-        <Logo top={16} left={20} size={42} />
+      {/* ══════════════════════════════════════════════════════
+          DESKTOP  (visible at lg and above = 1024px+)
+          Tailwind:  hidden lg:block
+      ══════════════════════════════════════════════════════ */}
+      <div className="hidden lg:block"
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#fff', overflow: 'hidden' }}>
 
-        {/* Illustration — top 50% */}
+        {/* Illustration — left background */}
         <img src="/illustration.png" alt="illustration"
-          style={{
-            position: 'absolute', top: 0, left: 0,
-            width: '100%', height: '50vh',
-            objectFit: 'contain', objectPosition: 'center center',
-            backgroundColor: '#577a92',
-            zIndex: 1,
-          }}
+          style={{ position: 'absolute', bottom: 0, left: 0, height: '100vh', width: 'auto', objectFit: 'contain', zIndex: 1 }}
           onError={e => { e.currentTarget.style.display = 'none'; }} />
 
-        {/* Form — bottom 50% */}
-        <div style={{
-          position: 'absolute', top: '50vh', left: 0, right: 0, bottom: 0,
-          backgroundColor: '#577a92', overflowY: 'auto', zIndex: 2,
-        }}>
-          <Form padding="36px 40px 48px" />
+        {/* Logo */}
+        <div style={{ position: 'absolute', top: 30, left: 50, display: 'flex', alignItems: 'center', gap: 10, zIndex: 20 }}>
+          <img src="/logo.png" alt="FLARE logo"
+            style={{ width: 53, height: 53, objectFit: 'contain' }}
+            onError={e => { e.currentTarget.style.display = 'none'; }} />
+          <span style={{ fontFamily: 'Lexend, sans-serif', fontWeight: 700, fontSize: 32, color: '#345f86', letterSpacing: 1 }}>
+            FLARE
+          </span>
         </div>
-      </div>
 
-      {/* ════════════════════════════════════════
-          DESKTOP  > 1024px
-      ════════════════════════════════════════ */}
-      <div className="fl-login-large" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#fff', overflow: 'hidden' }}>
-        {/* Illustration — left side */}
-        <img src="/illustration.png" alt="illustration"
-          style={{
-            position: 'absolute', bottom: 0, left: 0,
-            height: '100vh', width: 'auto',
-            objectFit: 'contain', zIndex: 1,
-          }}
-          onError={e => { e.currentTarget.style.display = 'none'; }} />
-
-        <Logo top={30} left={50} size={53} />
-
-        {/* Card — right side */}
-        <div style={{
-          position: 'absolute', right: '100px',
-          top: '50%', transform: 'translateY(-50%)',
-          zIndex: 10,
-        }}>
+        {/* Login card — right side */}
+        <div style={{ position: 'absolute', right: 100, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
           <div style={{
-            backgroundColor: '#577a92', borderRadius: '20px',
-            width: '560px',
+            backgroundColor: '#577a92', borderRadius: 20, padding: '36px 56px', width: 560,
             boxShadow: '0 8px 32px rgba(52,95,134,0.18), 0 2px 8px rgba(0,0,0,0.10)',
           }}>
-            <Form padding="36px 56px" />
+            {form}
           </div>
         </div>
       </div>

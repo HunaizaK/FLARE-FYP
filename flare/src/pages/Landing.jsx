@@ -28,37 +28,70 @@ const C = {
    NAV
 ───────────────────────────────────────────── */
 const NAV_LINKS = ['Platform', 'How It Works', 'Impact', 'Organizations'];
+const NAV_HEIGHT = 64;
 
 function Navbar({ navigate }) {
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(false); // corrected by handler() on mount
+  const [onLight, setOnLight] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handler);
-    return () => window.removeEventListener('scroll', handler);
+    // Everything here is measured off getBoundingClientRect, which is
+    // viewport-relative and therefore correct no matter which element is
+    // doing the scrolling (window, body, or an inner wrapper).
+    const probeY = NAV_HEIGHT / 2;
+    const handler = () => {
+      const sections = document.querySelectorAll('[data-nav]');
+      // First section starts at the top of the page, so its offset == scroll distance.
+      const first = sections[0];
+      setScrolled(first ? first.getBoundingClientRect().top <= -50 : false);
+
+      let tone = 'dark';
+      for (const el of sections) {
+        const { top, bottom } = el.getBoundingClientRect();
+        if (top <= probeY && bottom > probeY) { tone = el.dataset.nav; break; }
+      }
+      setOnLight(tone === 'light');
+    };
+    handler(); // sync on mount — page can already be scrolled (reload / anchor / back-nav)
+    // Capture phase, so scrolls from body or any nested scroller reach us too.
+    window.addEventListener('scroll', handler, { passive: true, capture: true });
+    window.addEventListener('resize', handler);
+    return () => {
+      window.removeEventListener('scroll', handler, { capture: true });
+      window.removeEventListener('resize', handler);
+    };
   }, []);
+
+  const ink      = onLight ? C.navy : '#fff';
+  const linkIdle = onLight ? C.muted : 'rgba(255,255,255,0.78)';
 
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-      height: 64,
+      height: NAV_HEIGHT,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 clamp(20px, 5vw, 64px)',
-      backgroundColor: scrolled ? 'rgba(10,22,40,0.94)' : 'transparent',
+      backgroundColor: scrolled ? (onLight ? 'rgba(255,255,255,0.92)' : C.navy) : 'transparent',
       backdropFilter: scrolled ? 'blur(14px)' : 'none',
-      transition: 'background-color 0.35s ease, backdrop-filter 0.35s ease',
-      borderBottom: scrolled ? '1px solid rgba(183,201,220,0.12)' : 'none',
+      boxShadow: scrolled
+        ? (onLight ? '0 2px 16px rgba(10,22,40,0.10)' : '0 2px 16px rgba(10,22,40,0.28)')
+        : 'none',
+      transition: 'background-color 0.35s ease, backdrop-filter 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease',
+      borderBottom: scrolled
+        ? `1px solid ${onLight ? 'rgba(10,22,40,0.10)' : 'rgba(183,201,220,0.18)'}`
+        : '1px solid transparent',
     }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        onClick={() => document.querySelector('[data-nav]')?.scrollIntoView({ behavior: 'smooth' })}>
         <img src="/logo.png" alt="FLARE logo"
           style={{ width: 38, height: 38, objectFit: 'contain' }}
           onError={e => { e.currentTarget.style.display = 'none'; }} />
         <span style={{
           fontFamily: 'Lexend, sans-serif', fontWeight: 700,
-          fontSize: 22, color: '#fff', letterSpacing: '1.5px',
+          fontSize: 22, color: ink, letterSpacing: '1.5px',
+          transition: 'color 0.35s ease',
         }}>FLARE</span>
       </div>
 
@@ -66,6 +99,7 @@ function Navbar({ navigate }) {
       <button className="landing-mobile-signin" onClick={() => navigate('/login')} style={{
         backgroundColor: C.blue, color: '#fff', border: 'none',
         borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+        boxShadow: '0 2px 12px rgba(10,22,40,0.35)',
       }}>Sign In</button>
 
       {/* Desktop links */}
@@ -74,36 +108,47 @@ function Navbar({ navigate }) {
           <a key={l}
             href={`#${l.toLowerCase().replace(/\s+/g, '-')}`}
             style={{
-              color: 'rgba(255,255,255,0.78)', fontSize: 14, fontWeight: 500,
+              color: linkIdle, fontSize: 14, fontWeight: 500,
               textDecoration: 'none', letterSpacing: '0.01em',
               transition: 'color 0.2s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.78)'; }}>
+            onMouseEnter={e => { e.currentTarget.style.color = ink; }}
+            onMouseLeave={e => { e.currentTarget.style.color = linkIdle; }}>
             {l}
           </a>
         ))}
+        {/* Ghost outline over the hero, easing into the Get Started fill on scroll */}
         <button onClick={() => navigate('/login')} style={{
-          backgroundColor: 'transparent',
-          border: '1.5px solid rgba(183,201,220,0.55)',
+          backgroundColor: scrolled ? C.blue : 'transparent',
           color: '#fff', fontSize: 14, fontWeight: 600,
-          borderRadius: 8, padding: '8px 20px', cursor: 'pointer',
-          transition: 'border-color 0.2s, background 0.2s',
+          border: `1.5px solid ${scrolled ? C.blue : 'rgba(183,201,220,0.55)'}`,
+          borderRadius: 8,
+          padding: '9px 22px',
+          cursor: 'pointer',
+          boxShadow: scrolled ? '0 2px 12px rgba(52,95,134,0.35)' : 'none',
+          transition: 'background-color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
         }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#b7c9dc'; e.currentTarget.style.background = 'rgba(183,201,220,0.08)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(183,201,220,0.55)'; e.currentTarget.style.background = 'transparent'; }}>
+          onMouseEnter={e => {
+            e.currentTarget.style.backgroundColor = scrolled ? '#2a4e72' : 'rgba(183,201,220,0.12)';
+            e.currentTarget.style.borderColor = scrolled ? '#2a4e72' : '#b7c9dc';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.backgroundColor = scrolled ? C.blue : 'transparent';
+            e.currentTarget.style.borderColor = scrolled ? C.blue : 'rgba(183,201,220,0.55)';
+          }}>
           Sign In
         </button>
         <button onClick={() => navigate('/createacc')} style={{
           backgroundColor: C.blue, color: '#fff',
-          border: 'none', borderRadius: 8,
+          // matches the Sign In outline width so both pills share the same box
+          border: `1.5px solid ${C.blue}`, borderRadius: 8,
           padding: '9px 22px', fontSize: 14, fontWeight: 600,
           cursor: 'pointer',
           boxShadow: '0 2px 12px rgba(52,95,134,0.35)',
-          transition: 'background 0.2s, transform 0.15s',
+          transition: 'background-color 0.2s, border-color 0.2s',
         }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#2a4e72'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.blue; }}>
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#2a4e72'; e.currentTarget.style.borderColor = '#2a4e72'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = C.blue; e.currentTarget.style.borderColor = C.blue; }}>
           Get Started
         </button>
       </div>
@@ -116,7 +161,7 @@ function Navbar({ navigate }) {
 ───────────────────────────────────────────── */
 function Hero({ navigate }) {
   return (
-    <section style={{
+    <section data-nav="dark" style={{
       position: 'relative', height: '100vh', minHeight: 620,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden',
@@ -298,7 +343,7 @@ const FEATURES = [
 
 function PlatformSection() {
   return (
-    <section id="platform" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.light }}>
+    <section id="platform" data-nav="light" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.light }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         {/* Header */}
@@ -375,7 +420,7 @@ function HowItWorks() {
   );
 
   return (
-    <section id="how-it-works" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.white }}>
+    <section id="how-it-works" data-nav="light" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.white }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         <div style={{ maxWidth: 540, marginBottom: 56 }}>
@@ -501,7 +546,7 @@ const IMPACT_CARDS = [
 
 function Impact() {
   return (
-    <section id="impact" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.white }}>
+    <section id="impact" data-nav="light" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.white }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ maxWidth: 520, marginBottom: 56 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>
@@ -570,7 +615,7 @@ function Impact() {
 ───────────────────────────────────────────── */
 function Organizations({ navigate }) {
   return (
-    <section id="organizations" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.light }}>
+    <section id="organizations" data-nav="light" style={{ padding: 'clamp(64px, 10vw, 100px) clamp(20px, 5vw, 64px)', backgroundColor: C.light }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 72, alignItems: 'center' }}>
 
         {/* Image */}
@@ -779,8 +824,13 @@ export default function Landing() {
     <>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
-        body { overflow-x: hidden; }
+        /* Global index.css pins html/body/#root to height:100% with
+           overflow-x:hidden on body. That makes <body> a viewport-height
+           scroll container, so the page scrolls inside body and
+           window.scrollY never leaves 0. Undo it here so the viewport
+           scrolls and the navbar can react to it. */
+        html { scroll-behavior: smooth; height: auto; min-height: 100%; overflow-x: hidden; }
+        body, #root { height: auto; min-height: 100%; overflow: visible; }
 
         @keyframes pulse {
           0%, 100% { opacity: 1; box-shadow: 0 0 0 2px rgba(239,68,68,0.3); }

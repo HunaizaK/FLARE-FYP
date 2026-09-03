@@ -2,17 +2,375 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global Responsive Styles */
-* {
-  box-sizing: border-box;
-}
+/* ── Reset ───────────────────────────────────────────────── */
+* { box-sizing: border-box; }
 
-html,
-body,
-#root {
+html, body, #root {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+}
+
+body {
+  background: linear-gradient(135deg, #eef2f7 0%, #e4ecf4 100%);
+}
+
+/* ── CSS Custom Properties (respond to media queries) ────── */
+:root {
+  --nav-left:       146px;
+  --nav-width:      calc(100% - 146px);
+  --nav-bottom-pad: 0px;
+  --page-h-pad:     30px;
+  --page-title-size: 50px;
+}
+
+/* ── Page Loader ─────────────────────────────────────────── */
+@keyframes flare-spin {
+  to { transform: rotate(360deg); }
+}
+
+.flare-loader-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(238, 242, 247, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
+}
+
+.flare-loader-ring {
+  width: 52px;
+  height: 52px;
+  border: 4px solid #cddae6;
+  border-top-color: #345f86;
+  border-radius: 50%;
+  animation: flare-spin 0.75s linear infinite;
+}
+
+.flare-loader-text {
+  margin-top: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #577a92;
+  letter-spacing: 0.02em;
+}
+
+/* ── Card shadow utility ─────────────────────────────────── */
+.flare-card {
+  box-shadow:
+    0 2px 8px rgba(52, 95, 134, 0.08),
+    0 8px 24px rgba(52, 95, 134, 0.06);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+/* ── Sidebar (desktop) ───────────────────────────────────── */
+.flare-sidebar { display: block; }
+
+/* ── Bottom nav (mobile only) ────────────────────────────── */
+.flare-bottom-nav { display: none; }
+
+/* ── Page content wrapper ────────────────────────────────── */
+.flare-page-main {
+  /* desktop values come from inline style via var() */
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE  ≤ 767px
+═══════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* CSS variables flip on mobile */
+  :root {
+    --nav-left:        0px;
+    --nav-width:       100%;
+    --nav-bottom-pad:  70px;
+    --page-h-pad:      16px;
+    --page-title-size: 28px;
+  }
+
+  /* Hide sidebar */
+  .flare-sidebar { display: none !important; }
+
+  /* Show bottom nav */
+  .flare-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    background: #e9eff4;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.10);
+    z-index: 1000;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .flare-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 2px;
+    padding: 6px 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #4B5563;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .flare-bottom-nav-item.active { color: #1F618A; }
+
+  .flare-bottom-nav-item .MuiSvgIcon-root,
+  .flare-bottom-nav-item svg { font-size: 22px !important; }
+
+  /* ── Page content: font + spacing overrides ── */
+  .flare-page-main h1 {
+    font-size: var(--page-title-size) !important;
+    line-height: 1.2 !important;
+  }
+
+  .flare-page-main h2 {
+    font-size: 20px !important;
+  }
+
+  /* Sticky page header padding */
+  .flare-page-main > div:first-child {
+    padding-left: var(--page-h-pad) !important;
+    padding-right: var(--page-h-pad) !important;
+  }
+
+  /* Inner content padding */
+  .flare-page-main .flare-inner-pad {
+    padding: 16px var(--page-h-pad) !important;
+  }
+
+  /* Tables: horizontal scroll */
+  .flare-page-main table {
+    min-width: 480px;
+  }
+  .flare-page-main .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Buttons: minimum touch target */
+  .flare-page-main button {
+    min-height: 44px;
+  }
+
+  /* Cards: full width on mobile */
+  .flare-page-main .card-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Maps search bar: full width, sits at top on mobile ── */
+  .map-search-bar {
+    width: calc(100% - 32px) !important;
+    left: 16px !important;
+    transform: none !important;
+    top: 16px !important;
+  }
+
+  /* ── Layers button: drops below search bar ── */
+  .map-layers-btn {
+    top: 72px !important;
+    right: 16px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .map-view-panel {
+    top: 130px !important;
+    right: 8px !important;
+    width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+  }
+
+  /* Leaflet default zoom +/− control: drop below search bar */
+  .leaflet-top.leaflet-left {
+    top: 72px !important;
+  }
+
+  /* ── Pan controls: always visible on mobile, ignore desktop right-shift ── */
+  .map-pan-controls {
+    right: 16px !important;
+    bottom: 80px !important;
+    transition: none !important;
+  }
+
+  /* ── Gauge bottom panel: stacks vertically on mobile ── */
+  .gauge-bottom-panel {
+    width: calc(100% - 32px) !important;
+    left: 16px !important;
+    transform: none !important;
+    height: auto !important;
+    max-height: 72vh;
+    overflow-y: auto;
+    bottom: 76px !important;
+    padding: 16px !important;
+  }
+
+  .gauge-panel-inner {
+    flex-direction: column !important;
+    height: auto !important;
+    gap: 16px !important;
+  }
+
+  .gauge-chart-col {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+  }
+
+  .gauge-separator {
+    width: 100% !important;
+    height: 1px !important;
+    align-self: auto !important;
+  }
+
+  .gauge-info-col {
+    flex: 0 0 auto !important;
+    padding-left: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* ── Shelter form panel: bottom sheet on mobile ── */
+  .shelter-form-panel {
+    top: auto !important;
+    bottom: 76px !important;
+    right: 16px !important;
+    left: 16px !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    transform: none !important;
+    padding: 20px !important;
+  }
+
+  /* ── Login mobile: one unified blue flow ── */
+  .login-illustration {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: auto !important;
+    width: 100% !important;
+    height: 46vh !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    background: #577a92 !important;   /* same blue as card — letterbox disappears */
+  }
+
+  .login-card-wrapper {
+    position: fixed !important;
+    top: 46vh !important;             /* starts exactly where illustration ends */
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    overflow-y: auto;
+    border-radius: 0 !important;      /* no rounded top — seamless with illustration */
+  }
+
+  .login-card-inner {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    border-radius: 0 !important;
+    padding: 28px 24px 48px !important;
+  }
+
+  .login-logo {
+    top: 16px !important;
+    left: 16px !important;
+    z-index: 30 !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TABLET  768px – 1024px
+═══════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  :root {
+    --page-h-pad:      20px;
+    --page-title-size: 36px;
+  }
+
+  /* iPad: one unified blue flow */
+  .login-illustration {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: auto !important;
+    width: 100% !important;
+    height: 50vh !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    background: #577a92 !important;
+  }
+
+  .login-card-wrapper {
+    position: fixed !important;
+    top: 50vh !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    overflow-y: auto;
+    border-radius: 0 !important;
+  }
+
+  .login-card-inner {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    border-radius: 0 !important;
+    padding: 36px 40px 48px !important;
+  }
+
+  .login-logo {
+    top: 16px !important;
+    left: 20px !important;
+    z-index: 30 !important;
+  }
+
+  .flare-page-main h1 {
+    font-size: var(--page-title-size) !important;
+  }
+
+  /* ── Maps search bar: centre in the non-sidebar area (sidebar = 146px) ── */
+  .map-search-bar {
+    /* shift the 50% anchor right by half the sidebar width so the bar is
+       centred in the remaining viewport, not the full screen */
+    left: calc(50% + 73px) !important;
+    transform: translateX(-50%) !important;
+    width: min(600px, calc(100vw - 146px - 32px)) !important;
+    top: 26px !important;
+  }
+
+  /* ── Layers button: sit below search bar on iPad ── */
+  .map-layers-btn {
+    top: 82px !important;
+    right: 16px !important;
+  }
 }

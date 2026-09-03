@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Landing from '../pages/Landing';
 import Login from '../pages/auth/Login';
 import CreateAcc from '../pages/auth/createAcc';
 import SignUp from '../pages/auth/SignUp';
@@ -118,7 +119,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } />
 
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Landing />} />
       </Routes>
     </BrowserRouter>
   );

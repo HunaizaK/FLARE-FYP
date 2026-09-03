@@ -63,7 +63,7 @@ const EditLostFound = () => {
   return (
     <div className="relative w-full h-screen overflow-hidden bg-white">
       <Navbar />
-      <div className="absolute top-0 h-full transition-all duration-300 overflow-y-auto" style={{ left: '146px', width: 'calc(100% - 146px)' }}>
+      <div className="flare-page-main absolute top-0 h-full transition-all duration-300 overflow-y-auto" style={{ left: 'var(--nav-left)', width: 'var(--nav-width)', paddingBottom: 'var(--nav-bottom-pad)' }}>
 
         <div style={{ position: 'sticky', top: 0, backgroundColor: '#FFFFFF', zIndex: 100, padding: '20px 30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

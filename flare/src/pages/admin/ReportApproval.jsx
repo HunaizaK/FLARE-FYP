@@ -75,8 +75,8 @@ const ReportApproval = () => {
       <Navbar />
 
       <div
-        className="absolute top-0 h-full transition-all duration-300 overflow-y-auto"
-        style={{ left: '146px', width: 'calc(100% - 146px)' }}
+        className="flare-page-main absolute top-0 h-full transition-all duration-300 overflow-y-auto"
+        style={{ left: 'var(--nav-left)', width: 'var(--nav-width)', paddingBottom: 'var(--nav-bottom-pad)' }}
       >
         <div style={{ padding: '40px 40px 40px 30px' }}>
 

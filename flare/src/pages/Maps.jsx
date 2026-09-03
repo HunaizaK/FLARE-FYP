@@ -7,12 +7,77 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { initFloodOverlay } from '../flood-overlay';
 import PhoneInput from '../components/PhoneInput';
 
+// Fixed numeric IDs for each gauge station (1-13)
+const GAUGE_IDS = {
+  Kotli:          1,
+  Phulra:         2,
+  Besham_Qila:    3,
+  Bunji:          4,
+  Shatial_Bridge: 5,
+  Chakothi:       6,
+  Chattar_Kalass: 7,
+  Domel:          8,
+  Hattian_Bala:   9,
+  Kaghan:         10,
+  Talhata_Bridge: 11,
+  Dhudhnial:      12,
+  Muzaffarabad:   13,
+};
+
 const FlyToHandler = ({ target }) => {
   const map = useMap();
   useEffect(() => {
     if (target) map.flyTo([target.lat, target.lon], 13);
   }, [target, map]);
   return null;
+};
+
+// PanControls lives outside MapContainer so it can read showViewOptions state.
+// mapRef is passed in; panBy is called directly on the Leaflet map instance.
+const PanControls = ({ mapRef, showViewOptions }) => {
+  const PAN = 120;
+  const pan = (dx, dy) => { if (mapRef.current) mapRef.current.panBy([dx, dy]); };
+
+  const btnStyle = {
+    width: '36px', height: '36px',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    border: '1px solid #E5E7EB',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '16px', color: '#374151',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+    flexShrink: 0,
+  };
+
+  return (
+    <div
+      className="map-pan-controls"
+      style={{
+        position: 'absolute',
+        // shift left of view-options panel when it's open (panel is ~430px wide from right)
+        right: showViewOptions ? '450px' : '16px',
+        bottom: '60px',
+        zIndex: 1000,
+        display: 'grid',
+        gridTemplateColumns: '36px 36px 36px',
+        gridTemplateRows: '36px 36px 36px',
+        gap: '4px',
+        userSelect: 'none',
+        transition: 'right 0.2s ease',
+      }}
+    >
+      <div />
+      <button style={btnStyle} onClick={() => pan(0, -PAN)}>↑</button>
+      <div />
+      <button style={btnStyle} onClick={() => pan(-PAN, 0)}>←</button>
+      <div style={{ ...btnStyle, cursor: 'default', opacity: 0.4 }}>·</div>
+      <button style={btnStyle} onClick={() => pan(PAN, 0)}>→</button>
+      <div />
+      <button style={btnStyle} onClick={() => pan(0, PAN)}>↓</button>
+      <div />
+    </div>
+  );
 };
 
 const _API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -126,6 +191,7 @@ const Maps = () => {
 
 
   const debounceRef = useRef(null);
+  const mapRef      = useRef(null);
 
   const fetchSearchSuggestions = (query) => {
     if (!query || query.length < 2) {
@@ -246,7 +312,7 @@ const Maps = () => {
       <div className="absolute top-0 h-full transition-all duration-300" style={{ left: '0', width: '100%' }}>
         {/* Search Bar */}
 <div
-  className="absolute z-10"
+  className="absolute z-10 map-search-bar"
   style={{
     top: '26px',
     left: '50%',
@@ -335,11 +401,14 @@ const Maps = () => {
 </div>
 
 
+        {/* Pan Controls — outside MapContainer so it reads showViewOptions */}
+        <PanControls mapRef={mapRef} showViewOptions={showViewOptions} />
+
         {/* Layer Toggle Button - only show when View Options is closed */}
         {!showViewOptions && (
           <button
             onClick={() => setShowViewOptions(!showViewOptions)}
-            className="absolute z-10 bg-white rounded-full transition-all duration-200 hover:bg-gray-50"
+            className="absolute z-10 bg-white rounded-full transition-all duration-200 hover:bg-gray-50 map-layers-btn"
             style={{
               top: '30px',
               right: '30px',
@@ -367,9 +436,9 @@ const Maps = () => {
         {/* View Options Panel */}
         {showViewOptions && (
           <div
-            className="absolute z-20 bg-white"
+            className="absolute z-20 bg-white map-view-panel"
             style={{
-              top: '30px',
+              top: '82px',
               backgroundColor: '#FFFFFF',
               right: '30px',
               width: '400px',
@@ -664,6 +733,7 @@ const Maps = () => {
         {/* Leaflet Map */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
           <MapContainer
+            ref={mapRef}
             center={[center.lat, center.lng]}
             zoom={8}
             style={{ width: '100%', height: '100%' }}
@@ -952,6 +1022,7 @@ const Maps = () => {
         {/* Bottom Panel for Gauge Details */}
         {selectedGauge && (
           <div
+            className="gauge-bottom-panel"
             style={{
               position: 'fixed',
               bottom: '20px',
@@ -983,9 +1054,10 @@ const Maps = () => {
               <CloseOutlined style={{ color: '#6B7280', fontSize: '24px' }} />
             </button>
 
-            <div className="flex h-full" style={{ gap: '40px', maxWidth: '1400px', margin: '0 auto' }}>
+            <div className="flex h-full gauge-panel-inner" style={{ gap: '40px', maxWidth: '1400px', margin: '0 auto' }}>
               {/* Left side - Chart */}
               <div
+                className="gauge-chart-col"
                 style={{
                   flex: '0 0 420px',
                   border: '1px solid #E5E7EB',
@@ -1086,10 +1158,10 @@ const Maps = () => {
               </div>
 
               {/* Vertical Separator Line */}
-              <div style={{ width: '1px', backgroundColor: '#E5E7EB', alignSelf: 'stretch' }}></div>
+              <div className="gauge-separator" style={{ width: '1px', backgroundColor: '#E5E7EB', alignSelf: 'stretch' }}></div>
 
               {/* Right side - Gauge Information */}
-              <div style={{ flex: 1, paddingTop: '8px', paddingLeft: '20px' }}>
+              <div className="gauge-info-col" style={{ flex: 1, paddingTop: '8px', paddingLeft: '20px' }}>
                 <h3 style={{ 
                   fontFamily: 'Inter, sans-serif', 
                   fontSize: '20px', 
@@ -1102,7 +1174,7 @@ const Maps = () => {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {/* Two columns layout */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '280px 280px', gap: '60px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                     {/* Left column */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       <div>
@@ -1121,7 +1193,7 @@ const Maps = () => {
                           fontWeight: 500,
                           color: '#000000',
                         }}>
-                          {selectedGaugeForecast?.id ?? '—'}
+                          {selectedGauge ? (GAUGE_IDS[selectedGauge.id] ?? '—') : '—'}
                         </p>
                       </div>
 

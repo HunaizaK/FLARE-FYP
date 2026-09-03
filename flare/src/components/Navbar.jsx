@@ -60,8 +60,10 @@ const Navbar = () => {
   };
 
   return (
+    <>
+    {/* ── Desktop sidebar ── */}
     <div
-      className="fixed left-0 top-0 h-screen transition-all duration-300 ease-in-out"
+      className="flare-sidebar fixed left-0 top-0 h-screen transition-all duration-300 ease-in-out"
       style={{
         left: 0,
         top: 0,
@@ -239,6 +241,21 @@ const Navbar = () => {
         )}
       </div>
     </div>
+
+    {/* ── Mobile bottom nav ── */}
+    <nav className="flare-bottom-nav">
+      {menuItems.map((item, index) => (
+        <button
+          key={index}
+          className={`flare-bottom-nav-item${location.pathname === item.path ? ' active' : ''}`}
+          onClick={() => handleNavigate(item.path)}
+        >
+          <span style={{ fontSize: '22px', display: 'flex' }}>{item.icon}</span>
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+    </>
   );
 };
 

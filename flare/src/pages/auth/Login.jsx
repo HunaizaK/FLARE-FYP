@@ -76,6 +76,7 @@ const Login = () => {
       <img
         src="/illustration.png"
         alt="illustration"
+        className="login-illustration"
         style={{
           position: 'absolute',
           bottom: '0',
@@ -92,6 +93,7 @@ const Login = () => {
 
       {/* Logo and Company Name */}
       <div
+        className="login-logo"
         style={{
           position: 'absolute',
           top: '30px',
@@ -129,7 +131,7 @@ const Login = () => {
 
       {/* White Box Container */}
       <div
-        className="relative flex items-center justify-center"
+        className="login-card-wrapper relative flex items-center justify-center"
         style={{
           position: 'absolute',
           right: '100px',
@@ -139,26 +141,27 @@ const Login = () => {
         }}
       >
         <div
+          className="login-card-inner"
           style={{
             backgroundColor: '#577a92',
             borderRadius: '20px',
-            padding: '70px 50px',
-            width: '750px',
-            right: '-10px',
-            height: '700px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            padding: '36px 56px',
+            width: '560px',
+            height: 'auto',
+            minHeight: 'unset',
+            boxShadow: '0 8px 32px rgba(52, 95, 134, 0.18), 0 2px 8px rgba(0,0,0,0.10)',
             position: 'relative',
           }}
         >
           {/* Form Container */}
-          <div className="w-full max-w-md">
+          <div className="w-full">
             <h1
               style={{
                 fontFamily: 'Lexend, sans-serif',
-                fontSize: '48px',
+                fontSize: '40px',
                 fontWeight: 600,
                 color: '#ffffffff',
-                marginBottom: '8px',
+                marginBottom: '4px',
               }}
             >
               Login
@@ -169,13 +172,13 @@ const Login = () => {
                 fontFamily: 'Inter, sans-serif',
                 fontSize: '14px',
                 color: '#fbfcffff',
-                marginBottom: '40px',
+                marginBottom: '20px',
               }}
             >
               Please log in to your account to continue.
             </p>
 
-            <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: '24px' }}>
+            <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: '16px' }}>
               {/* User Name Input */}
               <div>
                 <label
@@ -188,7 +191,7 @@ const Login = () => {
                     display: 'block',
                   }}
                 >
-                  Name
+                  Username
                 </label>
                 <div className="relative">
                   <input
@@ -196,7 +199,7 @@ const Login = () => {
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
-                    placeholder="Enter your name"
+                    placeholder="Enter your username"
                     className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
                     style={{
                       fontFamily: 'Inter, sans-serif',

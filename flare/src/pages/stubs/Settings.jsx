@@ -294,8 +294,12 @@ const Settings = () => {
   const navigate  = useNavigate();
   const currentUser   = useSelector((s) => s.auth.user);
   const accountType   = useSelector((s) => s.auth.accountType);
+  const authToken     = useSelector((s) => s.auth.token);
 
+  // If a user has a valid session token they are by definition approved & active.
+  // (The backend rejects login for unapproved accounts, so a token = active.)
   const account = getAccounts().find((a) => a.userName === currentUser) || {};
+  const isActive = !!authToken || !!account.approved;
 
   // ── profile ──
   const [profile, setProfile] = useState({
@@ -400,8 +404,8 @@ const Settings = () => {
       <Navbar />
 
       <div
-        className="absolute top-0 h-full overflow-y-auto"
-        style={{ left: '146px', width: 'calc(100% - 146px)' }}
+        className="flare-page-main absolute top-0 h-full overflow-y-auto"
+        style={{ left: 'var(--nav-left)', width: 'var(--nav-width)', paddingBottom: 'var(--nav-bottom-pad)' }}
       >
         <div style={{ padding: '40px' }}>
 
@@ -486,12 +490,12 @@ const Settings = () => {
               <div>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#6B7280', marginBottom: '6px', marginTop: 0 }}>Status</p>
                 <span style={{
-                  backgroundColor: account.approved ? '#F0FDF4' : '#FFF7ED',
-                  color: account.approved ? '#15803D' : '#C2410C',
+                  backgroundColor: isActive ? '#F0FDF4' : '#FFF7ED',
+                  color: isActive ? '#15803D' : '#C2410C',
                   padding: '3px 12px', borderRadius: '20px',
                   fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600,
                 }}>
-                  {account.approved ? 'Active' : 'Pending Approval'}
+                  {isActive ? 'Active' : 'Pending Approval'}
                 </span>
               </div>
               <div>

@@ -141,7 +141,6 @@ const SignUp = () => {
 
             <div className="flex flex-col" style={{ gap: '12px' }}>
               {roleButton('organization', 'Organization')}
-              {roleButton('admin', 'Admin')}
               {roleButton('citizen', 'Citizen')}
             </div>
           </div>

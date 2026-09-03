@@ -276,7 +276,7 @@ const ShelterManagement = () => {
 
         {/* Add Shelter Panel — only for organizations */}
         {isOrg && (
-          <div className="absolute bg-white" style={{ top: '50%', transform: 'translateY(-50%)', right: '24px', width: '510px', backgroundColor: '#FFFFFF', height: '560px', borderRadius: '16px', boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.15)', padding: '32px', zIndex: 10 }}>
+          <div className="absolute bg-white shelter-form-panel" style={{ top: '50%', transform: 'translateY(-50%)', right: '24px', width: '510px', backgroundColor: '#FFFFFF', height: '560px', borderRadius: '16px', boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.15)', padding: '32px', zIndex: 10 }}>
 
             {/* Map/Satellite toggle */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>

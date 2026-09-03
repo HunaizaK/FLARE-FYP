@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import api from '../../services/api';
@@ -7,125 +7,72 @@ import PhoneInput from '../../components/PhoneInput';
 const SignUpForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Get the role from navigation state
   const role = location.state?.role || 'citizen';
 
+  const [isMobile, setIsMobile] = useState(true);
+  useLayoutEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const [formData, setFormData] = useState({
-    email: '',
-    contact_no: '',
-    username: '',
-    password: '',
-    confirmPassword: '',
+    email: '', contact_no: '', username: '', password: '', confirmPassword: '',
   });
-
-  const [showPassword, setShowPassword]             = useState(false);
+  const [showPassword, setShowPassword]               = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading]                   = useState(false);
-  const [signupError, setSignupError]               = useState('');
-
-  // Validation errors
+  const [isLoading, setIsLoading]                     = useState(false);
+  const [signupError, setSignupError]                 = useState('');
   const [errors, setErrors] = useState({
-    email: '',
-    contact_no: '',
-    username: '',
-    password: '',
-    confirmPassword: '',
+    email: '', contact_no: '', username: '', password: '', confirmPassword: '',
   });
 
-  // Email validation
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) return '';
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
-    }
+  const validateEmail = (v) => {
+    if (!v) return '';
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : 'Please enter a valid email address';
+  };
+  const validateContactNo = (v) => {
+    if (!v) return '';
+    if (v.length !== 10) return 'Phone number must be 10 digits';
+    if (!/^\d{10}$/.test(v)) return 'Phone number must contain only digits';
     return '';
   };
-
-  // Pakistani phone number validation (10 digits after +92)
-  const validateContactNo = (contactNo) => {
-    if (!contactNo) return '';
-    if (contactNo.length !== 10) {
-      return 'Phone number must be 10 digits';
-    }
-    if (!/^\d{10}$/.test(contactNo)) {
-      return 'Phone number must contain only digits';
-    }
+  const validatePassword = (v) => {
+    if (!v) return '';
+    if (v.length < 8)              return 'Password must be at least 8 characters';
+    if (!/[A-Z]/.test(v))          return 'Must contain an uppercase letter';
+    if (!/[a-z]/.test(v))          return 'Must contain a lowercase letter';
+    if (!/[0-9]/.test(v))          return 'Must contain a number';
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(v)) return 'Must contain a special character';
     return '';
   };
-
-  // Password validation (min 8 chars, uppercase, lowercase, number, special char)
-  const validatePassword = (password) => {
-    if (!password) return '';
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long';
-    }
-    if (!/[A-Z]/.test(password)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!/[a-z]/.test(password)) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!/[0-9]/.test(password)) {
-      return 'Password must contain at least one number';
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      return 'Password must contain at least one special character';
-    }
-    return '';
+  const validateConfirmPassword = (v, pw) => {
+    if (!v) return '';
+    return v !== pw ? 'Passwords do not match' : '';
   };
 
-  // Confirm password validation
-  const validateConfirmPassword = (confirmPassword, password) => {
-    if (!confirmPassword) return '';
-    if (confirmPassword !== password) {
-      return 'Passwords do not match';
-    }
-    return '';
-  };
-
-  // Check if all fields are filled and valid
-  const isFormComplete = formData.email && formData.contact_no && formData.username && formData.password && formData.confirmPassword &&
+  const isFormComplete =
+    formData.email && formData.contact_no && formData.username &&
+    formData.password && formData.confirmPassword &&
     !errors.email && !errors.contact_no && !errors.password && !errors.confirmPassword;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-
-    // Validate on change
+    setFormData(prev => ({ ...prev, [name]: value }));
     let error = '';
     switch (name) {
-      case 'email':
-        error = validateEmail(value);
-        break;
-      case 'contact_no':
-        error = validateContactNo(value);
-        break;
+      case 'email':           error = validateEmail(value); break;
+      case 'contact_no':      error = validateContactNo(value); break;
       case 'password':
         error = validatePassword(value);
-        // Also revalidate confirm password if it exists
-        if (formData.confirmPassword) {
-          setErrors(prev => ({
-            ...prev,
-            confirmPassword: validateConfirmPassword(formData.confirmPassword, value)
-          }));
-        }
+        if (formData.confirmPassword)
+          setErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(formData.confirmPassword, value) }));
         break;
-      case 'confirmPassword':
-        error = validateConfirmPassword(value, formData.password);
-        break;
-      default:
-        break;
+      case 'confirmPassword': error = validateConfirmPassword(value, formData.password); break;
+      default: break;
     }
-
-    setErrors({
-      ...errors,
-      [name]: error,
-    });
+    setErrors(prev => ({ ...prev, [name]: error }));
   };
 
   const handleSubmit = async (e) => {
@@ -134,428 +81,209 @@ const SignUpForm = () => {
     setSignupError('');
     try {
       await api.post('/auth/signup', {
-        email:      formData.email,
-        contact_no: formData.contact_no,
-        username:   formData.username,
-        password:   formData.password,
-        role,
+        email: formData.email, contact_no: formData.contact_no,
+        username: formData.username, password: formData.password, role,
       });
-      if (role === 'organization') {
-        navigate('/approval');
-      } else {
-        navigate('/login');
-      }
+      navigate(role === 'organization' ? '/approval' : '/login');
     } catch (err) {
       const detail = err.response?.data?.detail || 'Signup failed. Please try again.';
-      if (detail === 'Username or email already exists') {
-        setSignupError('This username or email is already registered.');
-      } else {
-        setSignupError(detail);
-      }
+      setSignupError(detail === 'Username or email already exists'
+        ? 'This username or email is already registered.' : detail);
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="h-screen w-screen overflow-hidden fixed inset-0" style={{ backgroundColor: '#ffffffff', position: 'relative' }}>
-      {/* Illustration Background */}
-      <img
-        src="/illustration.png"
-        alt="illustration"
-        style={{
-          position: 'absolute',
-          bottom: '0',
-          left: '0',
-          height: '100vh',
-          width: 'auto',
-          objectFit: 'contain',
-          zIndex: 1,
-        }}
-        onError={(e) => {
-          e.currentTarget.style.display = 'none';
-        }}
-      />
+  /* ── shared styles ── */
+  const inputStyle = {
+    width: '100%', height: 48, borderRadius: 20,
+    border: '1px solid #E5E7EB', padding: '0 16px',
+    fontFamily: 'Inter, sans-serif', fontSize: 14,
+    backgroundColor: '#fff', color: '#374151',
+    outline: 'none', boxSizing: 'border-box',
+  };
+  const labelStyle = {
+    display: 'block', fontFamily: 'Inter, sans-serif',
+    fontSize: 14, fontWeight: 500, color: '#fff', marginBottom: 6,
+  };
+  const errStyle = {
+    color: '#EF4444', fontSize: 12, marginTop: 4, fontFamily: 'Inter, sans-serif',
+  };
 
-      {/* Logo and Company Name */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '30px',
-          left: '50px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          zIndex: 20,
-        }}
-      >
-        <img
-          src="/logo.png"
-          alt="FLARE logo"
-          style={{
-            width: '53px',
-            height: '53px',
-            objectFit: 'contain',
-          }}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-        <span
-          style={{
-            fontFamily: 'Lexend, sans-serif',
-            fontWeight: 700,
-            fontSize: '32px',
-            color: '#345f86',
-            letterSpacing: '1px',
-          }}
-        >
-          FLARE
-        </span>
+  const roleLabel = role === 'organization' ? 'an Organization' : 'a Citizen';
+
+  /* ── form fields ── */
+  const formFields = (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+      {/* Email */}
+      <div>
+        <label style={labelStyle}>Email</label>
+        <input type="email" name="email" value={formData.email} onChange={handleChange}
+          placeholder="Enter your email" required style={inputStyle} />
+        {errors.email && <p style={errStyle}>{errors.email}</p>}
       </div>
 
-      {/* White Box Container */}
-      <div
-        className="relative flex items-center justify-center"
-        style={{
-          position: 'absolute',
-          right: '100px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 10,
-        }}
-      >
-          <div
-            style={{
-              backgroundColor: '#577a92',
-              borderRadius: '20px',
-              padding: '0px 50px',
-              width: '750px',
-              right: '-10px',
-              height: '700px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              position: 'relative',
-            }}
-          >
-         
+      {/* Contact */}
+      <div>
+        <label style={labelStyle}>Contact No.</label>
+        <PhoneInput
+          value={formData.contact_no}
+          onChange={(v) => { setFormData(p => ({ ...p, contact_no: v })); setErrors(p => ({ ...p, contact_no: validateContactNo(v) })); }}
+          placeholder="333 3333333" maxLength={10}
+          style={{ backgroundColor: '#fff', border: `1px solid ${errors.contact_no ? '#EF4444' : '#E5E7EB'}` }}
+        />
+        {errors.contact_no && <p style={errStyle}>{errors.contact_no}</p>}
+      </div>
 
-          <div className="w-full max-w-md">
-            <h1
-              style={{
-                fontFamily: 'Lexend, sans-serif',
-                fontSize: '48px',
-                fontWeight: 600,
-                color: '#ffffffff',
-                marginBottom: '0px',
-              }}
-            >
-              Sign Up
-            </h1>
+      {/* Username */}
+      <div>
+        <label style={labelStyle}>Username</label>
+        <input type="text" name="username" value={formData.username} onChange={handleChange}
+          placeholder="Enter your username" required style={inputStyle} />
+      </div>
 
-            <p
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '14px',
-                color: '#fbfcffff',
-                marginBottom: '16px',
-              }}
-            >
-              Create your account as {role === 'organization' ? 'an Organization' : role === 'admin' ? 'an Admin' : 'a Citizen'}.
-            </p>
+      {/* Password */}
+      <div>
+        <label style={labelStyle}>Password</label>
+        <div style={{ position: 'relative' }}>
+          <input type={showPassword ? 'text' : 'password'} name="password"
+            value={formData.password} onChange={handleChange}
+            placeholder="Create a password" required
+            style={{ ...inputStyle, paddingRight: 48 }} />
+          <button type="button" onClick={() => setShowPassword(!showPassword)}
+            style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            {showPassword ? <AiOutlineEye style={{ width: 20, height: 20, color: '#9CA3AF' }} /> : <AiOutlineEyeInvisible style={{ width: 20, height: 20, color: '#9CA3AF' }} />}
+          </button>
+        </div>
+        {errors.password && <p style={errStyle}>{errors.password}</p>}
+      </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: '12px' }}>
-              {/* Email Input */}
-              <div>
-                <label
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#ffffffff',
-                    marginBottom: '8px',
-                    display: 'block',
-                  }}
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    height: '48px',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '20px',
-                    padding: '0 16px',
-                    boxSizing: 'border-box',
-                  }}
-                  required
-                />
-                {errors.email && (
-                  <p style={{ color: '#EF4444', fontSize: '13px', marginTop: '4px', fontFamily: 'Inter, sans-serif' }}>
-                    {errors.email}
-                  </p>
-                )}
-              </div>
+      {/* Confirm Password */}
+      <div>
+        <label style={labelStyle}>Confirm Password</label>
+        <div style={{ position: 'relative' }}>
+          <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword"
+            value={formData.confirmPassword} onChange={handleChange}
+            placeholder="Confirm your password" required
+            style={{ ...inputStyle, paddingRight: 48 }} />
+          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            {showConfirmPassword ? <AiOutlineEye style={{ width: 20, height: 20, color: '#9CA3AF' }} /> : <AiOutlineEyeInvisible style={{ width: 20, height: 20, color: '#9CA3AF' }} />}
+          </button>
+        </div>
+        {errors.confirmPassword && <p style={errStyle}>{errors.confirmPassword}</p>}
+      </div>
 
-              {/* Contact No Input */}
-              <div>
-                <label
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#ffffffff',
-                    marginBottom: '8px',
-                    display: 'block',
-                  }}
-                >
-                  Contact No.
-                </label>
-                <PhoneInput
-                  value={formData.contact_no}
-                  onChange={(value) => {
-                    setFormData(prev => ({ ...prev, contact_no: value }));
-                    setErrors(prev => ({ ...prev, contact_no: validateContactNo(value) }));
-                  }}
-                  placeholder="333 3333333"
-                  maxLength={10}
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    border: `1px solid ${errors.contact_no ? '#EF4444' : '#E5E7EB'}`,
-                  }}
-                />
-                {errors.contact_no && (
-                  <p style={{ color: '#EF4444', fontSize: '13px', marginTop: '4px', fontFamily: 'Inter, sans-serif' }}>
-                    {errors.contact_no}
-                  </p>
-                )}
-              </div>
+      {signupError && <p style={{ ...errStyle, fontSize: 13 }}>{signupError}</p>}
 
-              {/* User Name Input */}
-              <div>
-                <label
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#ffffffff',
-                    marginBottom: '8px',
-                    display: 'block',
-                  }}
-                >
-                  User Name
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Enter your username"
-                  className="w-full bg-white text-gray-700 placeholder-gray-400 outline-none"
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    height: '48px',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '20px',
-                    padding: '0 16px',
-                    boxSizing: 'border-box',
-                  }}
-                  required
-                />
-              </div>
+      <button type="submit" disabled={!isFormComplete || isLoading} style={{
+        width: '100%', height: 48, borderRadius: 16, border: 'none', outline: 'none',
+        fontFamily: 'Inter, sans-serif', fontSize: 15, fontWeight: 500,
+        marginTop: 4, boxSizing: 'border-box',
+        backgroundColor: isFormComplete && !isLoading ? '#b7c9dc' : '#9CA3AF',
+        color: '#000', cursor: isFormComplete && !isLoading ? 'pointer' : 'not-allowed',
+      }}>
+        {isLoading ? 'Creating account…' : 'Sign Up'}
+      </button>
+    </form>
+  );
 
-              {/* Password Input */}
-              <div>
-                <label
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#ffffffff',
-                    marginBottom: '8px',
-                    display: 'block',
-                  }}
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Create a password"
-                    className="bg-white text-gray-700 placeholder-gray-400 outline-none"
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '14px',
-                      height: '48px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '20px',
-                      padding: '0 48px 0 16px',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                    }}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'transparent',
-                      border: 'none',
-                      padding: 0,
-                      outline: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {showPassword ? (
-                      <AiOutlineEye style={{ width: '20px', height: '20px', color: '#9CA3AF' }} />
-                    ) : (
-                      <AiOutlineEyeInvisible style={{ width: '20px', height: '20px', color: '#9CA3AF' }} />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p style={{ color: '#EF4444', fontSize: '13px', marginTop: '4px', fontFamily: 'Inter, sans-serif' }}>
-                    {errors.password}
-                  </p>
-                )}
-              </div>
+  /* ── logo ── */
+  const Logo = ({ size = 36, fontSize = 22, top = 16, left = 16 }) => (
+    <div style={{ position: 'absolute', top, left, zIndex: 30, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <img src="/logo.png" alt="FLARE" style={{ width: size, height: size, objectFit: 'contain' }}
+        onError={e => { e.currentTarget.style.display = 'none'; }} />
+      <span style={{ fontFamily: 'Lexend, sans-serif', fontWeight: 700, fontSize, color: '#345f86', letterSpacing: 1 }}>FLARE</span>
+    </div>
+  );
 
-              {/* Confirm Password Input */}
-              <div>
-                <label
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#ffffffff',
-                    marginBottom: '8px',
-                    display: 'block',
-                  }}
-                >
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Confirm your password"
-                    className="bg-white text-gray-700 placeholder-gray-400 outline-none"
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '14px',
-                      height: '48px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '20px',
-                      padding: '0 48px 0 16px',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                    }}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'transparent',
-                      border: 'none',
-                      padding: 0,
-                      outline: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {showConfirmPassword ? (
-                      <AiOutlineEye style={{ width: '20px', height: '20px', color: '#9CA3AF' }} />
-                    ) : (
-                      <AiOutlineEyeInvisible style={{ width: '20px', height: '20px', color: '#9CA3AF' }} />
-                    )}
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <p style={{ color: '#EF4444', fontSize: '13px', marginTop: '4px', fontFamily: 'Inter, sans-serif' }}>
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
+  /* ── back button ── */
+  const BackBtn = ({ color = '#fff' }) => (
+    <button onClick={() => navigate('/createacc')}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        background: 'none', border: 'none', cursor: 'pointer',
+        fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500,
+        color, marginBottom: 16, padding: 0,
+      }}>
+      ← Back
+    </button>
+  );
 
-              {/* API Error */}
-              {signupError && (
-                <p style={{ color: '#EF4444', fontSize: '13px', fontFamily: 'Inter, sans-serif' }}>
-                  {signupError}
-                </p>
-              )}
+  /* ════════════════════════════════════════
+     MOBILE / TABLET  (< 1024px)
+  ════════════════════════════════════════ */
+  if (isMobile) {
+    return (
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#577a92' }}>
+        <Logo />
 
-              {/* Sign Up Button */}
-              <button
-                type="submit"
-                disabled={!isFormComplete || isLoading}
-                className={`w-full font-medium transition-colors duration-200 ${isFormComplete && !isLoading
-                  ? 'bg-[#b7c9dc] hover:bg-[#8f9dad] text-black'
-                  : 'bg-[#9CA3AF] cursor-not-allowed text-black'
-                  }`}
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '15px',
-                  height: '48px',
-                  borderRadius: '16px',
-                  border: 'none',
-                  outline: 'none',
-                  marginTop: '8px',
-                  boxSizing: 'border-box',
-                }}
-              >
-                {isLoading ? 'Creating account…' : 'Sign Up'}
+        {/* Illustration — top 35% */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '35vh', backgroundColor: '#577a92', zIndex: 1 }}>
+          <img src="/illustration.png" alt="illustration"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom', display: 'block' }}
+            onError={e => { e.currentTarget.style.display = 'none'; }} />
+        </div>
+
+        {/* Form — bottom 65% */}
+        <div style={{ position: 'absolute', top: '35vh', left: 0, right: 0, bottom: 0, backgroundColor: '#577a92', overflowY: 'auto', zIndex: 2, padding: '20px 24px 48px' }}>
+          <BackBtn />
+          <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: 26, fontWeight: 600, color: '#fff', marginBottom: 4 }}>
+            Sign Up
+          </h1>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#fbfcff', marginBottom: 16 }}>
+            Create your account as {roleLabel}.
+          </p>
+          {formFields}
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fff' }}>
+              Already have an account?{' '}
+              <button onClick={() => navigate('/login')}
+                style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fff', textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                Login
               </button>
-            </form>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {/* Login Link */}
-            <div className="text-center" style={{ marginTop: '16px' }}>
-              <p
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '14px',
-                  color: '#ffffffff',
-                }}
-              >
-                Already have an account?{' '}
-                <button
-                  onClick={() => navigate('/login')}
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '14px',
-                    color: '#ffffffff',
-                    textDecoration: 'underline',
-                    fontWeight: 500,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                  
-                >
-                  Login
-                </button>
-              </p>
-            </div>
+  /* ════════════════════════════════════════
+     DESKTOP  (≥ 1024px)
+  ════════════════════════════════════════ */
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#fff', overflow: 'hidden' }}>
+      <img src="/illustration.png" alt="illustration"
+        style={{ position: 'absolute', bottom: 0, left: 0, height: '100vh', width: 'auto', objectFit: 'contain', zIndex: 1 }}
+        onError={e => { e.currentTarget.style.display = 'none'; }} />
+
+      <Logo size={53} fontSize={32} top={30} left={50} />
+
+      <div style={{ position: 'absolute', right: 100, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
+        <div style={{
+          backgroundColor: '#577a92', borderRadius: 20,
+          padding: '32px 50px', width: 560,
+          maxHeight: '90vh', overflowY: 'auto',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        }}>
+          <BackBtn />
+          <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: 40, fontWeight: 600, color: '#fff', marginBottom: 4 }}>
+            Sign Up
+          </h1>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fbfcff', marginBottom: 16 }}>
+            Create your account as {roleLabel}.
+          </p>
+          {formFields}
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fff' }}>
+              Already have an account?{' '}
+              <button onClick={() => navigate('/login')}
+                style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#fff', textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                Login
+              </button>
+            </p>
           </div>
         </div>
       </div>

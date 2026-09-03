@@ -62,6 +62,12 @@ function Navbar({ navigate }) {
         }}>FLARE</span>
       </div>
 
+      {/* Mobile Sign In button — only shows when desktop nav is hidden */}
+      <button className="landing-mobile-signin" onClick={() => navigate('/login')} style={{
+        backgroundColor: C.blue, color: '#fff', border: 'none',
+        borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+      }}>Sign In</button>
+
       {/* Desktop links */}
       <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
         {NAV_LINKS.map(l => (
@@ -788,6 +794,9 @@ export default function Landing() {
         @media (max-width: 700px) {
           .landing-nav-links { display: none !important; }
           .footer-brand { grid-column: span 1 !important; }
+        }
+        @media (min-width: 701px) {
+          .landing-mobile-signin { display: none !important; }
         }
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition: none !important; }

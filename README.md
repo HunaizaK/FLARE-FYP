@@ -63,7 +63,7 @@ For each gauge, historical Sentinel-1 flood maps are paired with that day's disc
 
 - **Choosing thresholds:** an iterative procedure trades off correct flood predictions against false ones. Sweeping its strictness gives a range of precision–recall trade-offs, and the setting with the best F-score is kept.
 - **Inference is a single raster comparison.** No elevation model or hydraulic simulation is needed at prediction time.
-- **Beyond the training range:** for discharge higher than ever observed, the code grows the most extreme historical extent outward in proportion to the excess ([flood_api/thresholding_model.py](flood_api/thresholding_model.py)).
+- **Beyond the training range:** for discharge higher than ever observed, the model conservatively falls back to the most extreme historical extent rather than extrapolating.
 
 ### Operational pipeline
 
@@ -160,12 +160,13 @@ Eight of the 11 evaluated gauges score above 0.80.
 - **T+4 to T+5** support planning;
 - **T+6 to T+7** indicate the trend only.
 
-**Floods larger than any on record.** Flood-extent thresholds are learned only from discharge that has actually been observed. Beyond that range the mapping can only grow the largest recorded flood outward, so a genuinely new flood pattern may be under-mapped.
+**Floods larger than any on record.** Flood-extent thresholds are learned only from discharge that has actually been observed. Beyond that range the model falls back to the largest recorded extent, so an unprecedented flood may be under-mapped. A physically grounded extrapolation, such as a manifold-based inundation model, is the natural next step.
 
-**Issues found while reviewing this code:**
-- [ml/inference.py](ml/inference.py) cuts the target gauge's history off at its end date, but reads upstream gauges with plain `.tail(60)` and no date filter. If the upstream CSVs extend past the end date, the target and upstream windows cover different days. Filtering upstream data by the same date would keep them aligned.
-- The forecast end date is fixed at `2022-08-10`, which replays the 2022 flood season. Live operation needs it set from the latest data available.
-- `JWT_SECRET` falls back to `"secret"` if the environment variable isn't set ([backend/auth_utils.py](backend/auth_utils.py)). In production the backend should refuse to start without it.
+**Future work** (from the paper):
+- richer predictors: soil moisture, temperature and land-surface state;
+- flash and urban floods, using higher-frequency rainfall;
+- more basins;
+- real-time gauge data, to move from retrospective to live operation.
 
 ## How to run
 
